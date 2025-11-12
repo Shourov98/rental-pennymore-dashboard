@@ -50,7 +50,7 @@ export default function AdminSidebar() {
       section: "Personal Information",
       items: [
         { label: "Profile", icon: User, href: "/profile" },
-        { label: "Logout", icon: LogOut, href: "/logout" },
+        { label: "Logout", icon: LogOut, href: "/signin" },
       ],
     },
   ];
