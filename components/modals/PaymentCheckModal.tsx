@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Percent } from "lucide-react";
+import { X, DollarSign } from "lucide-react";
 
 interface PaymentCheckModalProps {
   isOpen: boolean;
@@ -90,7 +90,7 @@ export function PaymentCheckModal({ isOpen, onClose }: PaymentCheckModalProps) {
 
         {/* Percentage input */}
         <div className="relative mb-8">
-          <Percent
+          <DollarSign
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500"
           />
@@ -98,7 +98,7 @@ export function PaymentCheckModal({ isOpen, onClose }: PaymentCheckModalProps) {
             type="number"
             value={percentage}
             onChange={(e) => setPercentage(e.target.value)}
-            placeholder="Enter percentage"
+            placeholder="Enter Amount"
             className="w-full pl-8 pr-3 py-2.5 text-sm text-black border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>

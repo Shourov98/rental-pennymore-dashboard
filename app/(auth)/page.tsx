@@ -1,6 +1,11 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
   return (
     <div className="w-full">
       {/* Logo */}
@@ -18,6 +23,7 @@ export default function Home() {
         {/* Login Button */}
         <button
           type="submit"
+          onClick={() => router.push("/dashboard")}
           className="
                 w-full bg-action bg-blue-500 hover:bg-blue-700 text-text-inverted
                 py-3 sm:py-3.5 rounded-xl
