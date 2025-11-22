@@ -1,28 +1,23 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import {
-  MapPin,
-  DollarSign,
-  Calendar,
-  Home,
-  Hash,
-  LucideIcon,
-} from "lucide-react";
+import { MapPin, DollarSign, Calendar } from "lucide-react";
 
-// ✅ Move this component OUTSIDE of the main render
+// Reusable read-only info box
 function InfoBox({
   icon: Icon,
   value,
   placeholder,
 }: {
-  icon?: LucideIcon;
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   value: string;
   placeholder: string;
 }) {
   return (
     <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 flex-1 cursor-not-allowed">
-      {Icon && <Icon size={16} className="text-blue-600 mr-2 shrink-0" />}
+      {Icon && (
+        <Icon width={16} height={16} className="text-blue-600 mr-2 shrink-0" />
+      )}
       <span className="text-sm text-gray-800">{value || placeholder}</span>
     </div>
   );
@@ -31,12 +26,18 @@ function InfoBox({
 export default function RequestDetailsPage() {
   const { requestId } = useParams<{ requestId: string }>();
 
+  // ---- Request data should come from API later ----
+  // (for now using mock sample)
+  const renter = {
+    firstName: "John",
+    lastName: "Doe",
+  };
+
   const request = {
     id: requestId,
-    neighborhood: "Manhattan",
-    borough: "West Chelsea",
-    address: "123 Hudson St",
-    apartment: "5A",
+    requestName: "BeforeListed-1",
+    borough: "Manhattan",
+    neighborhoods: ["West Chelsea", "Hudson Yards"], // ⬅ MULTIPLE support
     price: "$4,250.00",
     dateRange: "5/21/25 - 6/21/25",
     bedrooms: "2BR",
@@ -50,52 +51,68 @@ export default function RequestDetailsPage() {
 
   return (
     <section className="w-full bg-white rounded-xl shadow-sm p-6 sm:p-8 md:p-10">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Request Details
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
+      {/* ------------------------------------------------ */}
+      {/* HEADER AREA WITH REQUEST NAME + RENTER FIRST NAME */}
+      {/* ------------------------------------------------ */}
+      <div className="mb-8 flex flex-col gap-1">
+        <div className="flex flex-col items-left justify-between">
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {request.requestName}
+          </h1>
+          <span className="text-md font-semibold text-gray-700 py-1.5 rounded-lg">
+            Renter: {renter.firstName}
+          </span>
+        </div>
+
+        <p className="text-sm text-gray-500">
           Review renter’s pre-market request information
         </p>
       </div>
 
-      {/* Neighborhood */}
+      {/* Borough */}
       <div className="mb-4">
-        <p className="text-sm font-medium text-gray-700 mb-1">Neighborhood</p>
+        <p className="text-sm font-semibold text-gray-700 mb-1">Borough</p>
         <div className="flex gap-6">
           <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input type="radio" checked readOnly className="accent-blue-600" />
+            <input
+              type="radio"
+              checked={(request.borough ?? "") === "Manhattan"}
+              readOnly
+              className="accent-blue-600"
+            />
             Manhattan
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input type="radio" readOnly className="accent-blue-600" />
+            <input
+              type="radio"
+              checked={(request.borough ?? "") === "Brooklyn"}
+              readOnly
+              className="accent-blue-600"
+            />
             Brooklyn
           </label>
         </div>
       </div>
 
-      {/* Borough */}
+      {/* Neighborhood – Multiple */}
       <div className="flex flex-col mb-4">
         <label className="text-sm font-medium text-gray-700 mb-1">
-          Borough
+          Neighborhoods
         </label>
-        <InfoBox icon={MapPin} value={request.borough} placeholder="Borough" />
-      </div>
 
-      {/* Address & Apartment */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <div className="flex flex-col flex-1">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            Address
-          </label>
-          <InfoBox icon={Home} value={request.address} placeholder="Address" />
-        </div>
-        <div className="flex flex-col flex-1">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            Apartment
-          </label>
-          <InfoBox icon={Hash} value={request.apartment} placeholder="Number" />
+        <div className="flex flex-wrap gap-2">
+          {request.neighborhoods.length > 0 ? (
+            request.neighborhoods.map((hood) => (
+              <span
+                key={hood}
+                className="bg-gray-100 border border-gray-300 text-gray-800 rounded-md px-3 py-1 text-sm"
+              >
+                {hood}
+              </span>
+            ))
+          ) : (
+            <InfoBox icon={MapPin} value="" placeholder="No neighborhoods" />
+          )}
         </div>
       </div>
 
@@ -114,7 +131,7 @@ export default function RequestDetailsPage() {
       {/* Date */}
       <div className="flex flex-col mb-6">
         <label className="text-sm font-medium text-gray-700 mb-1">
-          Estimate date when the listing stops being Pre-Market
+          Estimated date range
         </label>
         <InfoBox icon={Calendar} value={request.dateRange} placeholder="From" />
       </div>
@@ -138,6 +155,7 @@ export default function RequestDetailsPage() {
             ))}
           </div>
         </div>
+
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-700 mb-1">Bathrooms</p>
           <div className="flex gap-1">

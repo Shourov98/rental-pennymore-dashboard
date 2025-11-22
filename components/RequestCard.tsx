@@ -1,57 +1,112 @@
 import { CalendarDays, BedDouble, Bath } from "lucide-react";
 
 interface RequestCardProps {
-  area: string;
+  requestName: string;
+  borough: string;
+  neighborhood: string;
   dateRange: string;
   price: string;
   beds: number;
   baths: number;
+  status: "active" | "deactive";
+  disableActivate?: boolean;
   onView: () => void;
+  onToggleStatus: () => void;
 }
 
 export default function RequestCard({
-  area,
+  requestName,
+  borough,
+  neighborhood,
   dateRange,
   price,
   beds,
   baths,
+  status,
+  disableActivate = false,
   onView,
+  onToggleStatus,
 }: RequestCardProps) {
+  const isActive = status === "active";
+
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col justify-between transition hover:shadow-md hover:-translate-y-1 duration-200">
-      {/* Top Section */}
-      <div>
-        <h3 className="text-lg font-semibold text-[#0B0B2C]">{area}</h3>
-        <div className="flex items-center gap-2 text-gray-500 text-sm mt-2">
-          <CalendarDays className="w-4 h-4" />
-          <span>{dateRange}</span>
+      {/* Request Name + Status */}
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-lg font-semibold text-[#0B0B2C]">{requestName}</h3>
+
+        <span
+          className={`px-3 py-1 text-xs rounded-full font-medium ${
+            isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          }`}
+        >
+          {isActive ? "Active" : "Deactive"}
+        </span>
+      </div>
+
+      {/* Borough + Neighborhood */}
+      <div className="mt-1">
+        <p className="text-gray-500 text-sm">Borough</p>
+        <p className="font-medium text-gray-900">{borough}</p>
+
+        <p className="text-gray-500 text-sm mt-2">Neighborhood</p>
+        <p className="font-medium text-gray-900">{neighborhood}</p>
+      </div>
+
+      {/* Dates */}
+      <div className="flex items-center gap-2 text-gray-500 text-sm mt-4">
+        <CalendarDays className="w-4 h-4" />
+        <span>{dateRange}</span>
+      </div>
+
+      {/* Price */}
+      <div className="mt-4">
+        <p className="text-gray-500 text-sm">Min</p>
+        <p className="text-xl font-bold text-[#0B0B2C]">{price}</p>
+      </div>
+
+      {/* Beds / Baths */}
+      <div className="flex items-center gap-3 mt-3 text-gray-600 text-sm">
+        <div className="flex items-center gap-1">
+          <BedDouble className="w-4 h-4 text-gray-500" />
+          <span>{beds} Beds</span>
         </div>
 
-        <div className="mt-4">
-          <p className="text-gray-500 text-sm">Min</p>
-          <p className="text-xl font-bold text-[#0B0B2C]">{price}</p>
-        </div>
+        <span className="text-gray-300">|</span>
 
-        <div className="flex items-center gap-3 mt-3 text-gray-600 text-sm">
-          <div className="flex items-center gap-1">
-            <BedDouble className="w-4 h-4 text-gray-500" />
-            <span>{beds} Beds</span>
-          </div>
-          <span className="text-gray-300">|</span>
-          <div className="flex items-center gap-1">
-            <Bath className="w-4 h-4 text-gray-500" />
-            <span>{baths} Bath</span>
-          </div>
+        <div className="flex items-center gap-1">
+          <Bath className="w-4 h-4 text-gray-500" />
+          <span>{baths} Bath</span>
         </div>
       </div>
 
-      {/* Button */}
-      <button
-        onClick={onView}
-        className="mt-6 w-full py-2.5 bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-600 font-medium text-sm rounded-2xl transition-all"
-      >
-        View Details
-      </button>
+      {/* Buttons */}
+      <div className="mt-6 flex gap-3">
+        {/* View Button */}
+        <button
+          onClick={onView}
+          className="w-full py-2.5 bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-600 font-medium text-sm rounded-2xl transition-all"
+        >
+          View Details
+        </button>
+
+        {/* Activate / Deactivate Button */}
+        <button
+          disabled={!isActive && disableActivate}
+          onClick={onToggleStatus}
+          className={`w-full py-2.5 font-medium text-sm rounded-2xl transition-all
+            ${
+              isActive
+                ? "bg-red-50 text-red-600 hover:bg-red-500 hover:text-white"
+                : disableActivate
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-green-50 text-green-600 hover:bg-green-500 hover:text-white"
+            }
+          `}
+        >
+          {isActive ? "Deactivate" : "Activate"}
+        </button>
+      </div>
     </div>
   );
 }
