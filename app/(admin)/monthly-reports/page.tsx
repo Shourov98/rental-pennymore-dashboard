@@ -31,7 +31,7 @@ export default function ReportListPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-white p-6 rounded-xl shadow-sm">
         <h1 className="text-2xl font-semibold text-[#0A093D]">Report</h1>
         <button
-          onClick={() => router.push("/reports/add")}
+          onClick={() => router.push("/monthly-reports/add")}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition mt-3 sm:mt-0"
         >
           <Plus size={16} /> Add Report
@@ -73,13 +73,17 @@ export default function ReportListPage() {
                 <td className="px-4 py-3 text-center">
                   <div className="flex justify-center gap-2">
                     <button
-                      onClick={() => router.push(`/reports/edit/${report.id}`)}
+                      onClick={() =>
+                        router.push(`/monthly-reports/edit/${report.id}`)
+                      }
                       className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full"
                     >
                       <Edit2 size={16} className="text-blue-600" />
                     </button>
                     <button
-                      onClick={() => router.push(`/reports/view/${report.id}`)}
+                      onClick={() =>
+                        router.push(`/monthly-reports/view/${report.id}`)
+                      }
                       className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full"
                     >
                       <Eye size={16} className="text-gray-800" />
