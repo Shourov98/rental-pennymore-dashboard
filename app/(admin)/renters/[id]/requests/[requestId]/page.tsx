@@ -159,7 +159,7 @@ export default function RequestDetailsPage() {
         {/* Price */}
         <div className="flex flex-col mb-4">
           <label className="text-sm font-medium text-gray-700 mb-1">
-            Pre-Market Price
+            Max Pre-Market Price
           </label>
           <InfoBox
             icon={DollarSign}
