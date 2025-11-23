@@ -2,12 +2,16 @@
 
 import Image from "next/image";
 import { Bell } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminNavbar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b shadow-sm h-16 flex items-center justify-between px-6">
       {/* Logo */}
-      <div className="text-2xl font-bold text-gray-900">Logo</div>
+      {/* Logo */}
+      <Link href="/">
+        <Image src="/Logo_1.svg" alt="Logo" width={250} height={200} />
+      </Link>
 
       {/* Right side */}
       <div className="flex items-center gap-4">
