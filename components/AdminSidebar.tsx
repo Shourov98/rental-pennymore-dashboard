@@ -11,6 +11,7 @@ import {
   Megaphone,
   CreditCard,
   FileText,
+  NotebookTabs,
   User,
   LogOut,
 } from "lucide-react";
@@ -43,7 +44,12 @@ export default function AdminSidebar() {
           icon: CreditCard,
           href: "/payments",
         },
-        { label: "Report", icon: FileText, href: "/reports" },
+        { label: "Download Report", icon: FileText, href: "/reports" },
+        {
+          label: "Monthly Report",
+          icon: NotebookTabs,
+          href: "/monthly-reports",
+        },
       ],
     },
     {

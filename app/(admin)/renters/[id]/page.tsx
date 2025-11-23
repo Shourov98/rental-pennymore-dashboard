@@ -152,7 +152,7 @@ export default function RenterDetails() {
           <h2 className="text-xl font-semibold text-[#0B0B2C] mb-4">
             Contact Details
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-8">
             <div>
               <p className="text-gray-500 text-sm mb-1">Name</p>
               <p className="font-medium text-gray-900 text-base">
@@ -170,6 +170,12 @@ export default function RenterDetails() {
               <p className="font-medium text-gray-900 text-base">
                 {renter.phone}
               </p>
+            </div>
+            {/* Right: Badge */}
+            <div className="mt-4 md:mt-0">
+              <span className="px-4 py-1 border border-blue-400 text-blue-500 rounded-full text-xs font-medium">
+                T. Mor
+              </span>
             </div>
           </div>
         </div>

@@ -42,11 +42,11 @@ export default function AgentManagement() {
     },
   ]);
 
-  // Toggle access state
-  const handleAccessChange = (id: number, newStatus: boolean) => {
+  // Toggle access
+  const toggleAccess = (id: number) => {
     setAgents((prev) =>
       prev.map((agent) =>
-        agent.id === id ? { ...agent, access: newStatus } : agent
+        agent.id === id ? { ...agent, access: !agent.access } : agent
       )
     );
   };
@@ -67,7 +67,14 @@ export default function AgentManagement() {
         <table className="w-full border-collapse">
           <thead className="bg-blue-200 text-[#0B0B2C]">
             <tr>
-              {["First Match", "Name", "Email", "Phone", "Actions"].map((h) => (
+              {[
+                "First Match",
+                "Name",
+                "Email",
+                "Phone",
+                "Status",
+                "Actions",
+              ].map((h) => (
                 <th
                   key={h}
                   className="text-left text-sm font-semibold py-3 px-6"
@@ -93,36 +100,31 @@ export default function AgentManagement() {
                 <td className="py-3 px-6 text-sm">{agent.email}</td>
                 <td className="py-3 px-6 text-sm">{agent.phone}</td>
 
-                {/* Actions */}
-                <td className="py-3 px-6 flex items-center gap-2">
-                  {/* ACTIVATE BUTTON */}
-                  <button
-                    disabled={agent.access}
-                    onClick={() => handleAccessChange(agent.id, true)}
-                    className={`px-3 py-1.5 text-sm rounded-lg 
-                      ${
-                        agent.access
-                          ? "bg-blue-300 text-white cursor-not-allowed"
-                          : "bg-blue-500 hover:bg-blue-600 text-white"
-                      }
-                    `}
+                {/* STATUS COLUMN */}
+                <td className="py-3 px-6 text-sm">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      agent.access
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-600"
+                    }`}
                   >
-                    Activate
-                  </button>
+                    {agent.access ? "Active" : "Deactive"}
+                  </span>
+                </td>
 
-                  {/* DEACTIVATE BUTTON */}
+                {/* Actions */}
+                <td className="py-3 px-6 flex items-center gap-3">
+                  {/* TOGGLE BUTTON */}
                   <button
-                    disabled={!agent.access}
-                    onClick={() => handleAccessChange(agent.id, false)}
-                    className={`px-3 py-1.5 text-sm rounded-lg 
-                      ${
-                        !agent.access
-                          ? "bg-red-300 text-white cursor-not-allowed"
-                          : "bg-red-500 hover:bg-red-600 text-white"
-                      }
-                    `}
+                    onClick={() => toggleAccess(agent.id)}
+                    className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
+                      agent.access
+                        ? "bg-red-500 hover:bg-red-600 text-white"
+                        : "bg-green-500 hover:bg-green-600 text-white"
+                    }`}
                   >
-                    Deactivate
+                    {agent.access ? "Deactivate" : "Activate"}
                   </button>
 
                   {/* VIEW BUTTON */}

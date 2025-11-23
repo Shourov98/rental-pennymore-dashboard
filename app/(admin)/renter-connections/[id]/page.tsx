@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, Eye, DollarSign, X } from "lucide-react";
+import { ChevronLeft, Eye, DollarSign, Check, X } from "lucide-react";
 import Image from "next/image";
 import { TakeActionModal } from "@/components/modals/TakeActionModal";
 import { PaymentCheckModal } from "@/components/modals/PaymentCheckModal";
@@ -12,14 +12,45 @@ interface Agent {
   name: string;
   email: string;
   phone: string;
+  adminApproved: boolean;
 }
 
 const dummyAgents: Agent[] = [
-  { id: 1, name: "John Wick", email: "gsdf@gmail.com", phone: "+6562626" },
-  { id: 2, name: "John Wick", email: "gsdf@gmail.com", phone: "+6562626" },
-  { id: 3, name: "John Wick", email: "gsdf@gmail.com", phone: "+6562626" },
-  { id: 4, name: "John Wick", email: "gsdf@gmail.com", phone: "+6562626" },
-  { id: 5, name: "John Wick", email: "gsdf@gmail.com", phone: "+6562626" },
+  {
+    id: 1,
+    name: "John Wick",
+    email: "gsdf@gmail.com",
+    phone: "+6562626",
+    adminApproved: true,
+  },
+  {
+    id: 2,
+    name: "John Wick",
+    email: "gsdf@gmail.com",
+    phone: "+6562626",
+    adminApproved: false,
+  },
+  {
+    id: 3,
+    name: "John Wick",
+    email: "gsdf@gmail.com",
+    phone: "+6562626",
+    adminApproved: true,
+  },
+  {
+    id: 4,
+    name: "John Wick",
+    email: "gsdf@gmail.com",
+    phone: "+6562626",
+    adminApproved: false,
+  },
+  {
+    id: 5,
+    name: "John Wick",
+    email: "gsdf@gmail.com",
+    phone: "+6562626",
+    adminApproved: false,
+  },
 ];
 
 export default function RenterConnectionDetailsPage() {
@@ -99,7 +130,7 @@ export default function RenterConnectionDetailsPage() {
         {/* Right: Badge */}
         <div className="mt-4 md:mt-0">
           <span className="px-4 py-1 border border-blue-400 text-blue-500 rounded-full text-xs font-medium">
-            Tuval’s Client
+            T. Mor
           </span>
         </div>
       </div>
@@ -160,6 +191,7 @@ export default function RenterConnectionDetailsPage() {
                   <td className="px-4 py-3">{agent.phone}</td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
+                      {/* View Button */}
                       <button
                         onClick={() =>
                           router.push(
@@ -170,12 +202,24 @@ export default function RenterConnectionDetailsPage() {
                       >
                         <Eye size={16} className="text-gray-800" />
                       </button>
-                      <button
-                        onClick={() => setIsPaymentModalOpen(true)}
-                        className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
-                      >
-                        <DollarSign size={16} className="text-blue-600" />
-                      </button>
+
+                      {/* Conditional: Dollar OR Check */}
+                      {agent.adminApproved ? (
+                        // SHOW CHECK (NO ACTION)
+                        <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition">
+                          <Check size={16} className="text-blue-600" />
+                        </button>
+                      ) : (
+                        // SHOW DOLLAR (WITH ACTION)
+                        <button
+                          onClick={() => setIsPaymentModalOpen(true)}
+                          className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
+                        >
+                          <DollarSign size={16} className="text-blue-600" />
+                        </button>
+                      )}
+
+                      {/* Remove Button */}
                       <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition">
                         <X size={16} className="text-red-500" />
                       </button>
