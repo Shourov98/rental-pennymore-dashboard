@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface FilterState {
+export interface FilterState {
   borough: string;
   neighborhoods: string[];
   maxPrice: number;

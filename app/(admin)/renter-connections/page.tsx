@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SlidersHorizontal, Eye, Trash2 } from "lucide-react";
-import { FilterModal } from "@/components/modals/FilterModal";
+import { FilterModal, type FilterState } from "@/components/modals/FilterModal";
 import { useRouter } from "next/navigation";
 
 interface RenterConnection {
@@ -58,14 +58,16 @@ const renterConnections: RenterConnection[] = [
 ];
 
 export default function RenterConnectionPage() {
+  const router = useRouter();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const [filters, setFilters] = useState({
+  // ✅ Properly typed filter state
+  const [filters, setFilters] = useState<FilterState>({
     borough: "Manhattan",
-    neighborhoods: [] as string[],
+    neighborhoods: [],
     maxPrice: 10000,
-    bedrooms: "",
-    bathrooms: "",
+    bedrooms: [],
+    bathrooms: [],
   });
 
   const [filteredData, setFilteredData] = useState(renterConnections);
@@ -83,15 +85,17 @@ export default function RenterConnectionPage() {
       );
     }
 
-    if (filters.bedrooms) {
-      results = results.filter(
-        (item) => String(item.bedrooms) === filters.bedrooms.replace("BR", "")
+    // ✅ MULTI-SELECT BEDROOM FILTER FIXED
+    if (filters.bedrooms.length > 0) {
+      results = results.filter((item) =>
+        filters.bedrooms.includes(`${item.bedrooms}BR`)
       );
     }
 
-    if (filters.bathrooms) {
-      results = results.filter(
-        (item) => String(item.bathrooms) === filters.bathrooms
+    // ✅ MULTI-SELECT BATHROOM FILTER FIXED
+    if (filters.bathrooms.length > 0) {
+      results = results.filter((item) =>
+        filters.bathrooms.includes(String(item.bathrooms))
       );
     }
 
@@ -104,18 +108,15 @@ export default function RenterConnectionPage() {
       borough: "Manhattan",
       neighborhoods: [],
       maxPrice: 10000,
-      bedrooms: "",
-      bathrooms: "",
+      bedrooms: [],
+      bathrooms: [],
     });
+
     setFilteredData(renterConnections);
   };
 
-  const router = useRouter();
-  const totalPages = 2;
-
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <h1 className="text-2xl font-semibold text-[#0A093D]">
           Renter Connection
@@ -189,6 +190,7 @@ export default function RenterConnectionPage() {
         </div>
       </div>
 
+      {/* Filter Modal */}
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
