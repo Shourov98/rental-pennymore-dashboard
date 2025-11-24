@@ -13,18 +13,8 @@ import {
 import { DollarSign } from "lucide-react";
 
 const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 // Dummy revenue data
@@ -42,24 +32,26 @@ export default function AnalyticsPage() {
   const totalRevenue = "$120";
 
   return (
-    <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6 space-y-6">
+    <section className="w-full min-h-screen bg-[#F8F9FB] px-4 sm:px-6 md:px-8 py-6 space-y-6">
       {/* Header */}
-      <div className="bg-white p-6 rounded-xl shadow-sm">
-        <h1 className="text-2xl font-semibold text-[#0A093D]">Analytics</h1>
+      <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#0A093D]">
+          Analytics
+        </h1>
       </div>
 
       {/* Monthly Breakdown */}
-      <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 sm:mb-0">
+      <div className="bg-white rounded-xl shadow-sm p-5 sm:p-6 space-y-5">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
           Monthly Breakdown
         </h2>
 
-        <div className="flex gap-3">
-          {/* Month Dropdown */}
+        {/* Dropdowns */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-blue-100 text-black rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-400 outline-none"
+            className="bg-blue-100 text-black rounded-lg px-4 py-2 text-sm sm:text-base font-medium focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
           >
             <option>Month</option>
             {months.map((m) => (
@@ -67,11 +59,10 @@ export default function AnalyticsPage() {
             ))}
           </select>
 
-          {/* Year Dropdown */}
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="bg-blue-100 text-black rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-400 outline-none"
+            className="bg-blue-100 text-black rounded-lg px-4 py-2 text-sm sm:text-base font-medium focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
           >
             <option>Year</option>
             {years.map((y) => (
@@ -82,10 +73,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Total Revenue Box */}
-      <div className="bg-white rounded-xl shadow-sm p-6 flex justify-between items-center">
+      <div className="bg-white rounded-xl shadow-sm p-5 sm:p-6 flex justify-between items-center">
         <div>
-          <p className="text-sm font-medium text-gray-800 mb-1">Total</p>
-          <h2 className="text-2xl font-semibold text-[#0A093D]">
+          <p className="text-sm font-medium text-gray-700">Total</p>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-[#0A093D]">
             {totalRevenue}
           </h2>
         </div>
@@ -96,13 +87,16 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Revenue Chart */}
-      <div className="bg-white rounded-xl shadow-sm">
-        <div className="bg-[#CFE4FF] px-6 py-4 flex justify-between items-center rounded-t-xl">
-          <h3 className="text-lg font-semibold text-[#0A093D]">Revenue</h3>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-[#CFE4FF] px-5 sm:px-6 py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <h3 className="text-lg sm:text-xl font-semibold text-[#0A093D]">
+            Revenue
+          </h3>
+
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="bg-blue-100 text-black rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-400 outline-none"
+            className="bg-blue-100 text-black rounded-lg px-3 py-1.5 text-sm sm:text-base font-medium focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
           >
             <option>Year</option>
             {years.map((y) => (
@@ -112,11 +106,11 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Chart */}
-        <div className="p-6 h-80">
+        <div className="p-4 sm:p-6 h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={monthlyData}
-              margin={{ top: 20, right: 20, left: 0, bottom: 20 }}
+              margin={{ top: 10, right: 10, left: -10, bottom: 10 }}
             >
               <CartesianGrid
                 strokeDasharray="3 3"
