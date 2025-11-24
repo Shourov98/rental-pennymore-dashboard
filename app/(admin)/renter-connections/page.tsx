@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 interface RenterConnection {
   id: number;
+  requestName: string;
   dateSubmitted: string;
   renterName: string;
   borough: string;
@@ -21,6 +22,7 @@ interface RenterConnection {
 const renterConnections: RenterConnection[] = [
   {
     id: 1,
+    requestName: "BeforeListed-1", // ⭐ NEW
     dateSubmitted: "11/22/2025",
     renterName: "John Oliver",
     borough: "Manhattan",
@@ -33,6 +35,7 @@ const renterConnections: RenterConnection[] = [
   },
   {
     id: 2,
+    requestName: "BeforeListed-2",
     dateSubmitted: "11/19/2025",
     renterName: "Adam Driver",
     borough: "Manhattan",
@@ -45,6 +48,7 @@ const renterConnections: RenterConnection[] = [
   },
   {
     id: 3,
+    requestName: "BeforeListed-3",
     dateSubmitted: "11/13/2025",
     renterName: "Felix Domen",
     borough: "Manhattan",
@@ -138,6 +142,7 @@ export default function RenterConnectionPage() {
             <thead className="bg-[#CFE4FF] text-[#0A093D] font-semibold">
               <tr>
                 <th className="px-4 py-3 text-left">Date Submitted</th>
+                <th className="px-4 py-3 text-left">Request Name</th>
                 <th className="px-4 py-3 text-left">Renter name</th>
                 <th className="px-4 py-3 text-left">Borough</th>
                 <th className="px-4 py-3 text-left">Price Range</th>
@@ -157,6 +162,7 @@ export default function RenterConnectionPage() {
                   className="border-t border-gray-100 hover:bg-gray-50 transition"
                 >
                   <td className="px-4 py-3">{item.dateSubmitted}</td>
+                  <td className="px-4 py-3">{item.requestName}</td>
                   <td className="px-4 py-3">{item.renterName}</td>
                   <td className="px-4 py-3">{item.borough}</td>
                   <td className="px-4 py-3">{item.priceRange}</td>
