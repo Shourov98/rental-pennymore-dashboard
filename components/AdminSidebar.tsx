@@ -16,7 +16,11 @@ import {
   LogOut,
 } from "lucide-react";
 
-export default function AdminSidebar() {
+export default function AdminSidebar({
+  onItemClick,
+}: {
+  onItemClick?: () => void;
+}) {
   const pathname = usePathname();
 
   const navLinks = [
@@ -53,7 +57,7 @@ export default function AdminSidebar() {
       ],
     },
     {
-      section: "Personal Information",
+      section: "Personal",
       items: [
         { label: "Profile", icon: User, href: "/profile" },
         { label: "Logout", icon: LogOut, href: "/signin" },
@@ -62,30 +66,34 @@ export default function AdminSidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-gray-50 border-r overflow-y-auto p-4 space-y-6">
+    <aside className="fixed left-0 top-0 lg:top-16 w-64 h-[calc(100vh-4rem)] bg-gray-50 border-r overflow-y-auto px-4 pt-4 pb-8 flex flex-col gap-6">
       {navLinks.map((section) => (
         <div key={section.section}>
           <p className="text-xs text-gray-400 uppercase mb-2">
             {section.section}
           </p>
+
           <div className="space-y-2">
             {section.items.map((item) => {
-              const active =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href);
+
               const Icon = item.icon;
+
               return (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium border transition ${
-                    active
+                  onClick={onItemClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition ${
+                    isActive
                       ? "bg-blue-500 text-white border-blue-600"
                       : "bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
                   }`}
                 >
                   <Icon
                     className={`w-4 h-4 ${
-                      active ? "text-white" : "text-gray-700"
+                      isActive ? "text-white" : "text-gray-700"
                     }`}
                   />
                   {item.label}
