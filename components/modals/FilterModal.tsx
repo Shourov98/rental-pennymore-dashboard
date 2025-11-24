@@ -7,8 +7,8 @@ interface FilterState {
   borough: string;
   neighborhoods: string[];
   maxPrice: number;
-  bedrooms: string;
-  bathrooms: string;
+  bedrooms: string[];
+  bathrooms: string[];
 }
 
 interface FilterModalProps {
@@ -30,9 +30,7 @@ export function FilterModal({
 }: FilterModalProps) {
   if (!isOpen) return null;
 
-  // ---------------------------
   // Borough → Neighborhood Map
-  // ---------------------------
   const boroughNeighborhoods: Record<string, string[]> = {
     Manhattan: [
       "Harlem",
@@ -77,7 +75,7 @@ export function FilterModal({
     if (filters.neighborhoods.includes(hood)) {
       setFilters({
         ...filters,
-        neighborhoods: filters.neighborhoods.filter((n: string) => n !== hood),
+        neighborhoods: filters.neighborhoods.filter((n) => n !== hood),
       });
     } else {
       setFilters({
@@ -87,13 +85,34 @@ export function FilterModal({
     }
   };
 
+  // ---------------------------
+  // MULTI-SELECT TOGGLE HELPERS
+  // ---------------------------
+  const toggleBedroom = (b: string) => {
+    setFilters({
+      ...filters,
+      bedrooms: filters.bedrooms.includes(b)
+        ? filters.bedrooms.filter((x) => x !== b)
+        : [...filters.bedrooms, b],
+    });
+  };
+
+  const toggleBathroom = (b: string) => {
+    setFilters({
+      ...filters,
+      bathrooms: filters.bathrooms.includes(b)
+        ? filters.bathrooms.filter((x) => x !== b)
+        : [...filters.bathrooms, b],
+    });
+  };
+
   return (
     <div className="fixed inset-0 flex z-50">
       {/* Overlay */}
       <div className="flex-1 bg-black/40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="w-[340px] bg-white text-gray-700 h-full shadow-xl p-6 overflow-y-auto">
+      <div className="w-[340px] bg-white text-gray-700 h-full shadow-xl p-6 overflow-y-auto overflow-x-visible">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Filter</h2>
@@ -115,11 +134,7 @@ export function FilterModal({
                 name="borough"
                 checked={filters.borough === b}
                 onChange={() =>
-                  setFilters({
-                    ...filters,
-                    borough: b,
-                    neighborhoods: [],
-                  })
+                  setFilters({ ...filters, borough: b, neighborhoods: [] })
                 }
                 className="accent-blue-600"
               />
@@ -134,8 +149,10 @@ export function FilterModal({
         </label>
 
         <select
-          className="w-full border border-gray-400 px-3 py-2 rounded-lg mb-3 text-sm"
-          onChange={(e) => toggleNeighborhood(e.target.value)}
+          className="w-full border border-gray-400 px-3 py-2 rounded-lg mb-3 text-sm relative z-50"
+          onChange={(e) => {
+            if (e.target.value) toggleNeighborhood(e.target.value);
+          }}
         >
           <option value="">Select neighborhood</option>
           {selectedNeighborhoods.map((hood) => (
@@ -147,7 +164,7 @@ export function FilterModal({
 
         {/* Multi-select chips */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {filters.neighborhoods.map((hood: string) => (
+          {filters.neighborhoods.map((hood) => (
             <span
               key={hood}
               className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-2"
@@ -169,7 +186,7 @@ export function FilterModal({
         </label>
 
         <select
-          className="w-full border border-gray-400 px-3 py-2 rounded-lg text-sm mb-4"
+          className="w-full border border-gray-400 px-3 py-2 rounded-lg text-sm mb-4 relative z-50"
           value={filters.maxPrice}
           onChange={(e) =>
             setFilters({ ...filters, maxPrice: Number(e.target.value) })
@@ -188,9 +205,9 @@ export function FilterModal({
           {["Studio", "1BR", "2BR", "3BR", "4BR+"].map((b) => (
             <button
               key={b}
-              onClick={() => setFilters({ ...filters, bedrooms: b })}
+              onClick={() => toggleBedroom(b)}
               className={`px-4 py-2 rounded-lg text-sm border ${
-                filters.bedrooms === b
+                filters.bedrooms.includes(b)
                   ? "bg-blue-600 text-white border-blue-600"
                   : "bg-gray-50 border-gray-300"
               }`}
@@ -206,9 +223,9 @@ export function FilterModal({
           {["1", "2", "3", "4+"].map((b) => (
             <button
               key={b}
-              onClick={() => setFilters({ ...filters, bathrooms: b })}
+              onClick={() => toggleBathroom(b)}
               className={`px-4 py-2 rounded-lg text-sm border ${
-                filters.bathrooms === b
+                filters.bathrooms.includes(b)
                   ? "bg-blue-600 text-white border-blue-600"
                   : "bg-gray-50 border-gray-300"
               }`}
