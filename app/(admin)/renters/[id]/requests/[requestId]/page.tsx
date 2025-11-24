@@ -276,7 +276,7 @@ export default function RequestDetailsPage() {
         {/* Guarantor */}
         <div className="mb-6">
           <p className="text-sm font-medium text-gray-700 mb-2">
-            Accept Guarantor
+            Guarantor Type Required
           </p>
           {["Personal guarantor", "Third party guarantor"].map((item) => (
             <label key={item} className="flex items-center gap-2 mb-2">
