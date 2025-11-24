@@ -4,7 +4,11 @@ import { useState } from "react";
 import AdminNavbar from "@/components/AdminNavbar";
 import AdminSidebar from "@/components/AdminSidebar";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -12,7 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Navbar */}
       <AdminNavbar onMenuClick={() => setSidebarOpen(true)} />
 
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-16 border-white">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">
           <AdminSidebar />

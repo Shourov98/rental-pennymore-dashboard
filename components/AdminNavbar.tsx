@@ -10,10 +10,16 @@ export default function AdminNavbar({
   onMenuClick: () => void;
 }) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b shadow-sm h-16 flex items-center justify-between px-6">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm h-16 flex items-center justify-between px-6">
       {/* Logo */}
       <Link href="/">
-        <Image className="w-[120px] md:w-[150px] lg:w-[180px] h-auto" src="/Logo_1.svg" alt="Logo" width={180} height={150} />
+        <Image
+          className="w-[120px] md:w-[150px] lg:w-[180px] h-auto"
+          src="/Logo_1.svg"
+          alt="Logo"
+          width={180}
+          height={150}
+        />
       </Link>
 
       {/* Right side */}

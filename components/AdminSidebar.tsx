@@ -66,7 +66,7 @@ export default function AdminSidebar({
   ];
 
   return (
-    <aside className="fixed left-0 top-0 lg:top-16 w-64 h-[calc(100vh-4rem)] bg-gray-50 border-r overflow-y-auto px-4 pt-4 pb-8 flex flex-col gap-6">
+    <aside className="fixed left-0 top-0 lg:top-16 w-64 h-[calc(100vh-4rem)] bg-gray-50 overflow-y-auto px-4 pt-4 pb-8 flex flex-col gap-6">
       {navLinks.map((section) => (
         <div key={section.section}>
           <p className="text-xs text-gray-400 uppercase mb-2">

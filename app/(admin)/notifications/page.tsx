@@ -46,7 +46,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notifications List */}
-      <div className="bg-white rounded-xl shadow-sm divide-y">
+      <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-200">
         {notifications.map((n) => {
           const Icon = n.icon;
           let badgeColor = "";
