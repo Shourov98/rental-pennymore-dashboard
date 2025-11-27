@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { ChevronLeft, Eye, DollarSign, Check, X } from "lucide-react";
-import Image from "next/image";
 import { TakeActionModal } from "@/components/modals/TakeActionModal";
 import { PaymentCheckModal } from "@/components/modals/PaymentCheckModal";
 import { useParams, useRouter } from "next/navigation";
+import RenterContactCard from "@/components/RenterContactCard";
 
 interface Agent {
   id: number;
@@ -14,6 +14,14 @@ interface Agent {
   phone: string;
   adminApproved: boolean;
 }
+
+const renter = {
+  name: "John Doe",
+  email: "example@gmail.com",
+  phone: "+8801XXXXXXX",
+  image: "https://randomuser.me/api/portraits/men/31.jpg",
+  referrerName: "Tuval Mor",
+};
 
 const dummyAgents: Agent[] = [
   {
@@ -91,49 +99,15 @@ export default function RenterConnectionDetailsPage() {
       </div>
 
       {/* Renter Info Card */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 flex flex-col md:flex-row items-center md:items-center justify-between">
-        {/* Left: Avatar + Info */}
-        <div className="flex items-center gap-8">
-          {/* Profile Image */}
-          <div className="w-28 h-28 rounded-full overflow-hidden shrink-0">
-            <Image
-              src="https://i.pravatar.cc/150?img=3"
-              alt="Renter photo"
-              width={112}
-              height={112}
-              className="object-cover w-full h-full"
-            />
-          </div>
-
-          {/* Details */}
-          <div className="flex flex-col md:flex-row md:items-center gap-10 text-gray-800">
-            {/* Name */}
-            <div>
-              <p className="text-sm text-gray-500 mb-0.5">Name</p>
-              <p className="font-medium text-lg">John Doe</p>
-            </div>
-
-            {/* Email */}
-            <div>
-              <p className="text-sm text-gray-500 mb-0.5">Email</p>
-              <p className="font-medium text-lg">example@gmail.com</p>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <p className="text-sm text-gray-500 mb-0.5">Phone Number</p>
-              <p className="font-medium text-lg">+8801XXXXXXX</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Badge */}
-        <div className="mt-4 md:mt-0">
-          <span className="px-4 py-1 border border-blue-400 text-blue-500 rounded-full text-xs font-medium">
-            T. Mor
-          </span>
-        </div>
-      </div>
+      <RenterContactCard
+        renter={{
+          image: renter.image,
+          name: renter.name,
+          email: renter.email,
+          phone: renter.phone,
+          referrerName: renter.referrerName, // OK because it's optional
+        }}
+      />
 
       {/* Agents Table */}
       <div className="flex justify-between items-center mb-3">
