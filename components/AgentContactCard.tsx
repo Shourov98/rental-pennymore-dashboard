@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-interface AgentDetailsProps {
+interface AgentContactCardProps {
   agent: {
     image: string;
     name: string;
@@ -13,7 +13,7 @@ interface AgentDetailsProps {
   };
 }
 
-export default function AgentDetails({ agent }: AgentDetailsProps) {
+export default function AgentContactCard({ agent }: AgentContactCardProps) {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row gap-10 items-center md:items-start">
       {/* Profile Image */}

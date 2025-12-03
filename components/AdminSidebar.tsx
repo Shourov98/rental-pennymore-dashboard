@@ -14,6 +14,7 @@ import {
   NotebookTabs,
   User,
   LogOut,
+  CircleQuestionMark,
 } from "lucide-react";
 
 export default function AdminSidebar({
@@ -53,6 +54,11 @@ export default function AdminSidebar({
           label: "Monthly Report",
           icon: NotebookTabs,
           href: "/monthly-reports",
+        },
+        {
+          label: "FAQ Management",
+          icon: CircleQuestionMark,
+          href: "/faq-management",
         },
       ],
     },
