@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+import { selectAuth } from "@/store/auth/authSlice";
+import { useAppSelector } from "@/store/hooks";
+
 export default function OtpVerifyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { resetEmail } = useAppSelector(selectAuth);
+  const emailFromQuery = searchParams.get("email");
+  const email = emailFromQuery || resetEmail || "your email";
   const [otp, setOtp] = useState(["", "", "", ""]);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
@@ -67,7 +74,7 @@ export default function OtpVerifyPage() {
       </h2>
       <p className="text-center text-gray-800 mb-6 text-sm sm:text-base">
         We sent an OTP code to your email <br />
-        <span className="text-blue-700 font-medium">example@gmail.com</span>.
+        <span className="text-blue-700 font-medium">{email}</span>.
         Enter the code below to verify within 1 min.
       </p>
 

@@ -8,6 +8,10 @@ type LoginRequest = {
   password: string;
 };
 
+type ForgotPasswordRequest = {
+  email: string;
+};
+
 type User = {
   _id: string;
   email: string;
@@ -38,12 +42,20 @@ type LoginResponse = {
   timestamp: string;
 };
 
+type ForgotPasswordResponse = {
+  success: boolean;
+  message: string;
+};
+
 type AuthState = {
   user: User | null;
   accessToken: string | null;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   mustChangePassword: boolean;
+  resetEmail: string | null;
+  forgotStatus: "idle" | "loading" | "succeeded" | "failed";
+  forgotError: string | null;
 };
 
 const initialState: AuthState = {
@@ -52,6 +64,9 @@ const initialState: AuthState = {
   status: "idle",
   error: null,
   mustChangePassword: false,
+  resetEmail: null,
+  forgotStatus: "idle",
+  forgotError: null,
 };
 
 export const login = createAsyncThunk<
@@ -75,6 +90,27 @@ export const login = createAsyncThunk<
   }
 });
 
+export const forgotPassword = createAsyncThunk<
+  { email: string; message: string },
+  ForgotPasswordRequest,
+  { rejectValue: string }
+>("auth/forgotPassword", async ({ email }, { rejectWithValue }) => {
+  try {
+    const response = await apiClient.post<ForgotPasswordResponse>(
+      "/auth/forgot-password",
+      { email },
+    );
+
+    return { email, message: response.data.message };
+  } catch (error) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
+
+    return rejectWithValue("Unable to send reset code. Please try again.");
+  }
+});
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -83,6 +119,9 @@ const authSlice = createSlice({
       state.user = null;
       state.accessToken = null;
       state.mustChangePassword = false;
+      state.resetEmail = null;
+      state.forgotStatus = "idle";
+      state.forgotError = null;
     },
     setToken(state, action: PayloadAction<string | null>) {
       state.accessToken = action.payload;
@@ -106,6 +145,21 @@ const authSlice = createSlice({
           action.payload ??
           action.error.message ??
           "Login failed. Please try again.";
+      })
+      .addCase(forgotPassword.pending, (state) => {
+        state.forgotStatus = "loading";
+        state.forgotError = null;
+      })
+      .addCase(forgotPassword.fulfilled, (state, action) => {
+        state.forgotStatus = "succeeded";
+        state.resetEmail = action.payload.email;
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.forgotStatus = "failed";
+        state.forgotError =
+          action.payload ??
+          action.error.message ??
+          "Failed to send reset code. Please try again.";
       });
   },
 });
@@ -114,4 +168,3 @@ export const selectAuth = (state: RootState) => state.auth;
 
 export const { logout, setToken } = authSlice.actions;
 export default authSlice.reducer;
-

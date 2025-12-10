@@ -3,13 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { forgotPassword, selectAuth } from "@/store/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { forgotStatus, forgotError } = useAppSelector(selectAuth);
+  const [email, setEmail] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // send reset request logic here
+    const result = await dispatch(forgotPassword({ email }));
+
+    if (forgotPassword.fulfilled.match(result)) {
+      router.push(`/otp-verify?email=${encodeURIComponent(email)}`);
+    }
   };
 
   return (
@@ -54,6 +65,8 @@ export default function ForgotPasswordPage() {
               type="email"
               placeholder="Enter email"
               required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               className="flex-1 bg-transparent focus:outline-none text-gray-700 text-sm sm:text-base"
             />
           </div>
@@ -67,9 +80,14 @@ export default function ForgotPasswordPage() {
             text-text-inverted font-semibold
             py-3 sm:py-3.5 rounded-lg transition
           "
+          disabled={forgotStatus === "loading"}
         >
-          Next
+          {forgotStatus === "loading" ? "Sending..." : "Next"}
         </button>
+
+        {forgotError ? (
+          <p className="text-red-600 text-sm text-center">{forgotError}</p>
+        ) : null}
 
         {/* Back to Login */}
         <div className="flex items-center justify-center gap-2 text-sm sm:text-base mt-2">

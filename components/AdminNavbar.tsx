@@ -15,13 +15,12 @@ export default function AdminNavbar({
   const { user } = useAppSelector(selectAuth);
   const displayName = user?.fullName || user?.email || "Admin";
   const role = user?.role || "Admin";
-  const initials =
-    (user?.fullName || user?.email || "A")
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
+  const initials = (user?.fullName || user?.email || "A")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm h-16 flex items-center justify-between px-6">
@@ -38,14 +37,6 @@ export default function AdminNavbar({
 
       {/* Right side */}
       <div className="flex items-center gap-4">
-        {/* Notification Icon */}
-        <div className="relative hidden sm:block">
-          <Bell className="w-5 h-5 text-gray-600" />
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold px-1.5 rounded-full">
-            12
-          </span>
-        </div>
-
         {/* User Info */}
         <div className="flex items-center gap-2 cursor-pointer">
           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">
