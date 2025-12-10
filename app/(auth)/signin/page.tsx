@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function SigninPage() {
@@ -9,9 +10,17 @@ export default function SigninPage() {
   return (
     <div className="w-full">
       {/* Logo */}
-      <h1 className="text-3xl sm:text-4xl font-semibold text-center text-black mb-2">
-        LOGO
-      </h1>
+      <div className="w-full flex mb-5 justify-center">
+        <Link href="/">
+          <Image
+            className="w-[120px] md:w-[150px] lg:w-[180px] h-auto"
+            src="/Logo_1.svg"
+            alt="Logo"
+            width={180}
+            height={150}
+          />
+        </Link>
+      </div>
 
       {/* Headings */}
       <h2 className="text-2xl sm:text-3xl font-semibold text-center text-black mb-2">
