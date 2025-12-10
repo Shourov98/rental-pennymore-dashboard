@@ -5,13 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-import { selectAuth } from "@/store/auth/authSlice";
-import { useAppSelector } from "@/store/hooks";
+import { resetPassword, selectAuth } from "@/store/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { resetEmail, resetOtp } = useAppSelector(selectAuth);
+  const dispatch = useAppDispatch();
+  const { resetEmail, resetOtp, resetStatus, resetError } =
+    useAppSelector(selectAuth);
   const emailParam = searchParams.get("email");
   const otpParam = searchParams.get("otp");
   const email = emailParam || resetEmail || "";
@@ -22,6 +24,7 @@ export default function ResetPasswordPage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!email || !otp) {
@@ -29,11 +32,27 @@ export default function ResetPasswordPage() {
     }
   }, [email, otp, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add validation + API call for password reset here (include email + otp)
-    console.log("New password set:", { ...form, email, otp });
-    router.push("/signin"); // Redirect to login after success
+    setLocalError(null);
+
+    if (form.newPassword !== form.confirmPassword) {
+      setLocalError("Passwords do not match.");
+      return;
+    }
+
+    if (!email || !otp) {
+      setLocalError("Missing email or OTP. Please restart the flow.");
+      return;
+    }
+
+    const result = await dispatch(
+      resetPassword({ email, otp, newPassword: form.newPassword }),
+    );
+
+    if (resetPassword.fulfilled.match(result)) {
+      router.push("/pass-changed");
+    }
   };
 
   return (
@@ -146,9 +165,16 @@ export default function ResetPasswordPage() {
             text-text-inverted font-semibold
             py-3 sm:py-3.5 rounded-lg transition
           "
+          disabled={resetStatus === "loading"}
         >
-          Next
+          {resetStatus === "loading" ? "Saving..." : "Next"}
         </button>
+
+        {(localError || resetError) && (
+          <p className="text-red-600 text-sm text-center">
+            {localError || resetError}
+          </p>
+        )}
 
         {/* Resend + Back */}
         <div className="flex flex-col items-center gap-3 text-sm text-black mt-1">

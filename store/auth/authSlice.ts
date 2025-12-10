@@ -21,6 +21,12 @@ type ResendPasswordOtpRequest = {
   email: string;
 };
 
+type ResetPasswordRequest = {
+  email: string;
+  otp: string;
+  newPassword: string;
+};
+
 type User = {
   _id: string;
   email: string;
@@ -66,6 +72,11 @@ type ResendPasswordOtpResponse = {
   message: string;
 };
 
+type ResetPasswordResponse = {
+  success: boolean;
+  message: string;
+};
+
 type AuthState = {
   user: User | null;
   accessToken: string | null;
@@ -80,6 +91,8 @@ type AuthState = {
   resetOtp: string | null;
   resendStatus: "idle" | "loading" | "succeeded" | "failed";
   resendError: string | null;
+  resetStatus: "idle" | "loading" | "succeeded" | "failed";
+  resetError: string | null;
 };
 
 const initialState: AuthState = {
@@ -96,6 +109,8 @@ const initialState: AuthState = {
   resetOtp: null,
   resendStatus: "idle",
   resendError: null,
+  resetStatus: "idle",
+  resetError: null,
 };
 
 export const login = createAsyncThunk<
@@ -182,6 +197,27 @@ export const resendPasswordOtp = createAsyncThunk<
   }
 });
 
+export const resetPassword = createAsyncThunk<
+  { email: string; message: string },
+  ResetPasswordRequest,
+  { rejectValue: string }
+>("auth/resetPassword", async ({ email, otp, newPassword }, { rejectWithValue }) => {
+  try {
+    const response = await apiClient.post<ResetPasswordResponse>(
+      "/auth/reset-password",
+      { email, otp, newPassword },
+    );
+
+    return { email, message: response.data.message };
+  } catch (error) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
+
+    return rejectWithValue("Unable to reset password. Please try again.");
+  }
+});
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -198,6 +234,8 @@ const authSlice = createSlice({
       state.resetOtp = null;
       state.resendStatus = "idle";
       state.resendError = null;
+      state.resetStatus = "idle";
+      state.resetError = null;
     },
     setToken(state, action: PayloadAction<string | null>) {
       state.accessToken = action.payload;
@@ -267,6 +305,20 @@ const authSlice = createSlice({
           action.payload ??
           action.error.message ??
           "Failed to resend code. Please try again.";
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.resetStatus = "loading";
+        state.resetError = null;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.resetStatus = "succeeded";
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.resetStatus = "failed";
+        state.resetError =
+          action.payload ??
+          action.error.message ??
+          "Failed to reset password. Please try again.";
       });
   },
 });
