@@ -3,9 +3,36 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+
+import { login, selectAuth } from "@/store/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export default function SigninPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { status, error, user } = useAppSelector(selectAuth);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (user && status === "succeeded") {
+      router.push("/dashboard");
+    }
+  }, [router, status, user]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const resultAction = await dispatch(login({ email, password }));
+
+    if (login.fulfilled.match(resultAction)) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("accessToken", resultAction.payload.accessToken);
+      }
+      router.push("/dashboard");
+    }
+  };
 
   return (
     <div className="w-full">
@@ -31,7 +58,7 @@ export default function SigninPage() {
       </p>
 
       {/* Form */}
-      <form className="space-y-5 sm:space-y-6">
+      <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
         {/* Email */}
         <div>
           <label className="block text-gray-600 text-sm font-semibold text-text-tertiary mb-2">
@@ -49,6 +76,8 @@ export default function SigninPage() {
               type="email"
               placeholder="Enter email"
               required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               className="flex-1 text-black bg-transparent focus:outline-none text-text-secondary text-sm sm:text-base"
             />
           </div>
@@ -68,27 +97,36 @@ export default function SigninPage() {
               className="w-5 h-5 text-action mr-2"
             />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Enter password"
               required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className="flex-1 text-black bg-transparent focus:outline-none text-text-secondary text-sm sm:text-base"
             />
-            <Image
-              src="/icons/view.svg"
-              alt="Lock icon"
-              width={20}
-              height={20}
-              className="w-5 h-5 text-action mr-2"
-            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="text-action"
+            >
+              <Image
+                src={showPassword ? "/icons/view-closed.svg" : "/icons/view.svg"}
+                alt={showPassword ? "Hide password" : "Show password"}
+                width={20}
+                height={20}
+                className="w-5 h-5 text-action mr-2"
+              />
+            </button>
           </div>
 
           <div className="text-right mt-2">
-            <a
-              href="/forgot-password"
+            <Link
+              href="/forget-password"
               className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
             >
               Forgot Password?
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -100,17 +138,14 @@ export default function SigninPage() {
             py-3 sm:py-3.5 rounded-xl
             transition
           "
+          disabled={status === "loading"}
         >
-          Login
+          {status === "loading" ? "Logging in..." : "Login"}
         </button>
 
-        {/* Footer */}
-        <p className="text-text-tertiary text-center text-sm text-black">
-          Don’t have an account?{" "}
-          <a href="/signup" className="text-blue-600 hover:text-blue-800">
-            Create an account
-          </a>
-        </p>
+        {error ? (
+          <p className="text-red-600 text-sm text-center">{error}</p>
+        ) : null}
       </form>
     </div>
   );
