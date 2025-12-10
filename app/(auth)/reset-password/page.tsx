@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+import { selectAuth } from "@/store/auth/authSlice";
+import { useAppSelector } from "@/store/hooks";
+
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { resetEmail, resetOtp } = useAppSelector(selectAuth);
+  const emailParam = searchParams.get("email");
+  const otpParam = searchParams.get("otp");
+  const email = emailParam || resetEmail || "";
+  const otp = otpParam || resetOtp || "";
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
@@ -14,10 +23,16 @@ export default function ResetPasswordPage() {
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    if (!email || !otp) {
+      router.push("/forget-password");
+    }
+  }, [email, otp, router]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Add validation + API call for password reset here
-    console.log("New password set:", form);
+    // Add validation + API call for password reset here (include email + otp)
+    console.log("New password set:", { ...form, email, otp });
     router.push("/signin"); // Redirect to login after success
   };
 

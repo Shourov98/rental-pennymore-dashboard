@@ -5,15 +5,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-import { selectAuth } from "@/store/auth/authSlice";
-import { useAppSelector } from "@/store/hooks";
+import {
+  selectAuth,
+  verifyPasswordOtp,
+  resendPasswordOtp,
+} from "@/store/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export default function OtpVerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { resetEmail } = useAppSelector(selectAuth);
+  const dispatch = useAppDispatch();
+  const { resetEmail, resetOtp, verifyStatus, verifyError, resendStatus } =
+    useAppSelector(selectAuth);
   const emailFromQuery = searchParams.get("email");
-  const email = emailFromQuery || resetEmail || "your email";
+  const email = emailFromQuery || resetEmail || "";
   const [otp, setOtp] = useState(["", "", "", ""]);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
@@ -38,19 +44,24 @@ export default function OtpVerifyPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    if (code.length === 4) {
-      // verify code logic here
-      console.log("OTP Submitted:", code);
-      router.push("/reset-password"); // example next step
+    if (code.length !== 4 || !email) {
+      return;
+    }
+
+    const result = await dispatch(verifyPasswordOtp({ email, otp: code }));
+    if (verifyPasswordOtp.fulfilled.match(result)) {
+      router.push(
+        `/reset-password?email=${encodeURIComponent(email)}&otp=${code}`,
+      );
     }
   };
 
-  const handleResend = () => {
-    console.log("Resend OTP triggered");
-    // resend logic here
+  const handleResend = async () => {
+    if (!email) return;
+    await dispatch(resendPasswordOtp({ email }));
   };
 
   return (
@@ -74,7 +85,9 @@ export default function OtpVerifyPage() {
       </h2>
       <p className="text-center text-gray-800 mb-6 text-sm sm:text-base">
         We sent an OTP code to your email <br />
-        <span className="text-blue-700 font-medium">{email}</span>.
+        <span className="text-blue-700 font-medium">
+          {email || "your email"}
+        </span>
         Enter the code below to verify within 1 min.
       </p>
 
@@ -114,9 +127,14 @@ export default function OtpVerifyPage() {
             text-text-inverted font-semibold
             py-3 sm:py-3.5 rounded-lg transition
           "
+          disabled={verifyStatus === "loading" || !email}
         >
-          Next
+          {verifyStatus === "loading" ? "Verifying..." : "Next"}
         </button>
+
+        {verifyError ? (
+          <p className="text-red-600 text-sm text-center">{verifyError}</p>
+        ) : null}
 
         {/* Resend and Back */}
         <div className="flex flex-col items-center gap-3 text-sm sm:text-base mt-1">
@@ -125,9 +143,10 @@ export default function OtpVerifyPage() {
             <button
               type="button"
               onClick={handleResend}
-              className="text-blue-500 hover:text-blue-700 font-semibold"
+              className="text-blue-500 hover:text-blue-700 font-semibold disabled:opacity-60"
+              disabled={resendStatus === "loading" || !email}
             >
-              Resend again
+              {resendStatus === "loading" ? "Resending..." : "Resend again"}
             </button>
           </p>
 

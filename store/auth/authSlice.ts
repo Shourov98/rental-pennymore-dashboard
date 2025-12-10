@@ -12,6 +12,15 @@ type ForgotPasswordRequest = {
   email: string;
 };
 
+type VerifyPasswordOtpRequest = {
+  email: string;
+  otp: string;
+};
+
+type ResendPasswordOtpRequest = {
+  email: string;
+};
+
 type User = {
   _id: string;
   email: string;
@@ -47,6 +56,16 @@ type ForgotPasswordResponse = {
   message: string;
 };
 
+type VerifyPasswordOtpResponse = {
+  success: boolean;
+  message: string;
+};
+
+type ResendPasswordOtpResponse = {
+  success: boolean;
+  message: string;
+};
+
 type AuthState = {
   user: User | null;
   accessToken: string | null;
@@ -56,6 +75,11 @@ type AuthState = {
   resetEmail: string | null;
   forgotStatus: "idle" | "loading" | "succeeded" | "failed";
   forgotError: string | null;
+  verifyStatus: "idle" | "loading" | "succeeded" | "failed";
+  verifyError: string | null;
+  resetOtp: string | null;
+  resendStatus: "idle" | "loading" | "succeeded" | "failed";
+  resendError: string | null;
 };
 
 const initialState: AuthState = {
@@ -67,6 +91,11 @@ const initialState: AuthState = {
   resetEmail: null,
   forgotStatus: "idle",
   forgotError: null,
+  verifyStatus: "idle",
+  verifyError: null,
+  resetOtp: null,
+  resendStatus: "idle",
+  resendError: null,
 };
 
 export const login = createAsyncThunk<
@@ -111,6 +140,48 @@ export const forgotPassword = createAsyncThunk<
   }
 });
 
+export const verifyPasswordOtp = createAsyncThunk<
+  { email: string; otp: string; message: string },
+  VerifyPasswordOtpRequest,
+  { rejectValue: string }
+>("auth/verifyPasswordOtp", async ({ email, otp }, { rejectWithValue }) => {
+  try {
+    const response = await apiClient.post<VerifyPasswordOtpResponse>(
+      "/auth/verify-password-otp",
+      { email, otp },
+    );
+
+    return { email, otp, message: response.data.message };
+  } catch (error) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
+
+    return rejectWithValue("Unable to verify code. Please try again.");
+  }
+});
+
+export const resendPasswordOtp = createAsyncThunk<
+  { email: string; message: string },
+  ResendPasswordOtpRequest,
+  { rejectValue: string }
+>("auth/resendPasswordOtp", async ({ email }, { rejectWithValue }) => {
+  try {
+    const response = await apiClient.post<ResendPasswordOtpResponse>(
+      "/auth/resend-password-otp",
+      { email },
+    );
+
+    return { email, message: response.data.message };
+  } catch (error) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
+
+    return rejectWithValue("Unable to resend code. Please try again.");
+  }
+});
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -122,6 +193,11 @@ const authSlice = createSlice({
       state.resetEmail = null;
       state.forgotStatus = "idle";
       state.forgotError = null;
+      state.verifyStatus = "idle";
+      state.verifyError = null;
+      state.resetOtp = null;
+      state.resendStatus = "idle";
+      state.resendError = null;
     },
     setToken(state, action: PayloadAction<string | null>) {
       state.accessToken = action.payload;
@@ -160,6 +236,37 @@ const authSlice = createSlice({
           action.payload ??
           action.error.message ??
           "Failed to send reset code. Please try again.";
+      })
+      .addCase(verifyPasswordOtp.pending, (state) => {
+        state.verifyStatus = "loading";
+        state.verifyError = null;
+      })
+      .addCase(verifyPasswordOtp.fulfilled, (state, action) => {
+        state.verifyStatus = "succeeded";
+        state.resetEmail = action.payload.email;
+        state.resetOtp = action.payload.otp;
+      })
+      .addCase(verifyPasswordOtp.rejected, (state, action) => {
+        state.verifyStatus = "failed";
+        state.verifyError =
+          action.payload ??
+          action.error.message ??
+          "Verification failed. Please try again.";
+      })
+      .addCase(resendPasswordOtp.pending, (state) => {
+        state.resendStatus = "loading";
+        state.resendError = null;
+      })
+      .addCase(resendPasswordOtp.fulfilled, (state, action) => {
+        state.resendStatus = "succeeded";
+        state.resetEmail = action.payload.email;
+      })
+      .addCase(resendPasswordOtp.rejected, (state, action) => {
+        state.resendStatus = "failed";
+        state.resendError =
+          action.payload ??
+          action.error.message ??
+          "Failed to resend code. Please try again.";
       });
   },
 });
