@@ -27,9 +27,6 @@ export default function SigninPage() {
     const resultAction = await dispatch(login({ email, password }));
 
     if (login.fulfilled.match(resultAction)) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("accessToken", resultAction.payload.accessToken);
-      }
       router.push("/dashboard");
     }
   };

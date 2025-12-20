@@ -51,6 +51,7 @@ type LoginResponse = {
   data: {
     user: User;
     accessToken: string;
+    refreshToken?: string;
     expiresIn: string;
     mustChangePassword: boolean;
   };
@@ -80,6 +81,7 @@ type ResetPasswordResponse = {
 type AuthState = {
   user: User | null;
   accessToken: string | null;
+  refreshToken: string | null;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   mustChangePassword: boolean;
@@ -93,11 +95,14 @@ type AuthState = {
   resendError: string | null;
   resetStatus: "idle" | "loading" | "succeeded" | "failed";
   resetError: string | null;
+  refreshStatus: "idle" | "loading" | "succeeded" | "failed";
+  refreshError: string | null;
 };
 
 const initialState: AuthState = {
   user: null,
   accessToken: null,
+  refreshToken: null,
   status: "idle",
   error: null,
   mustChangePassword: false,
@@ -111,6 +116,8 @@ const initialState: AuthState = {
   resendError: null,
   resetStatus: "idle",
   resetError: null,
+  refreshStatus: "idle",
+  refreshError: null,
 };
 
 export const login = createAsyncThunk<
@@ -123,6 +130,13 @@ export const login = createAsyncThunk<
       "/auth/login",
       credentials,
     );
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("accessToken", response.data.data.accessToken);
+      if (response.data.data.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.data.refreshToken);
+      }
+    }
 
     return response.data.data;
   } catch (error) {
@@ -218,6 +232,56 @@ export const resetPassword = createAsyncThunk<
   }
 });
 
+type RefreshTokenResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    accessToken: string;
+    refreshToken?: string;
+    expiresIn?: string;
+  };
+  timestamp: string;
+};
+
+export const refreshAccessToken = createAsyncThunk<
+  RefreshTokenResponse["data"],
+  void,
+  { rejectValue: string; state: RootState }
+>("auth/refreshAccessToken", async (_, { rejectWithValue, getState }) => {
+  try {
+    const refreshTokenFromState = getState().auth.refreshToken;
+    const refreshTokenFromStorage =
+      typeof window !== "undefined"
+        ? localStorage.getItem("refreshToken")
+        : null;
+    const refreshToken = refreshTokenFromState || refreshTokenFromStorage;
+
+    if (!refreshToken) {
+      return rejectWithValue("Refresh token is missing.");
+    }
+
+    const response = await apiClient.post<RefreshTokenResponse>(
+      "/auth/refresh-token",
+      { refreshToken },
+    );
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("accessToken", response.data.data.accessToken);
+      if (response.data.data.refreshToken) {
+        localStorage.setItem("refreshToken", response.data.data.refreshToken);
+      }
+    }
+
+    return response.data.data;
+  } catch (error) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
+
+    return rejectWithValue("Unable to refresh session.");
+  }
+});
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -225,6 +289,7 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null;
       state.accessToken = null;
+      state.refreshToken = null;
       state.mustChangePassword = false;
       state.resetEmail = null;
       state.forgotStatus = "idle";
@@ -236,9 +301,25 @@ const authSlice = createSlice({
       state.resendError = null;
       state.resetStatus = "idle";
       state.resetError = null;
+      state.refreshStatus = "idle";
+      state.refreshError = null;
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+      }
     },
     setToken(state, action: PayloadAction<string | null>) {
       state.accessToken = action.payload;
+    },
+    setTokens(
+      state,
+      action: PayloadAction<{
+        accessToken: string | null;
+        refreshToken: string | null;
+      }>,
+    ) {
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
     },
   },
   extraReducers: (builder) => {
@@ -251,6 +332,7 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken ?? null;
         state.mustChangePassword = action.payload.mustChangePassword;
       })
       .addCase(login.rejected, (state, action) => {
@@ -319,11 +401,27 @@ const authSlice = createSlice({
           action.payload ??
           action.error.message ??
           "Failed to reset password. Please try again.";
+      })
+      .addCase(refreshAccessToken.pending, (state) => {
+        state.refreshStatus = "loading";
+        state.refreshError = null;
+      })
+      .addCase(refreshAccessToken.fulfilled, (state, action) => {
+        state.refreshStatus = "succeeded";
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken ?? state.refreshToken;
+      })
+      .addCase(refreshAccessToken.rejected, (state, action) => {
+        state.refreshStatus = "failed";
+        state.refreshError =
+          action.payload ??
+          action.error.message ??
+          "Failed to refresh session.";
       });
   },
 });
 
 export const selectAuth = (state: RootState) => state.auth;
 
-export const { logout, setToken } = authSlice.actions;
+export const { logout, setToken, setTokens } = authSlice.actions;
 export default authSlice.reducer;

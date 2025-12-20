@@ -1,19 +1,110 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Download } from "lucide-react";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
+
+type Renter = {
+  _id: string;
+  userId: string;
+  email: string;
+  fullName: string;
+  phoneNumber: string;
+  totalListings: number;
+  createdAt: string;
+};
+
+type Pagination = {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  nextPage: number | null;
+  prevPage: number | null;
+  slNo: number;
+};
+
+type RentersResponse = {
+  success: boolean;
+  message: string;
+  data: Renter[];
+  pagination: Pagination;
+  timestamp: string;
+};
 
 export default function RenterManagement() {
   const router = useRouter();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const [renters, setRenters] = useState<Renter[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const renters = [
-    {
-      id: 1,
-      name: "Nick Albasta",
-      email: "example@gmail.com",
-      phone: "+9595999659",
-    },
-  ];
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRenters = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<RentersResponse>(
+          "/renter/admin/renters",
+          {
+            params: { page, limit },
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          }
+        );
+
+        if (!isMounted) return;
+        setRenters(response.data.data);
+        setPagination(response.data.pagination);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(
+          err instanceof Error ? err.message : "Unable to load renters."
+        );
+      }
+    };
+
+    fetchRenters();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, page]);
+
+  const pageNumbers = useMemo(() => {
+    if (!pagination) return [];
+    const total = pagination.totalPages;
+    const current = pagination.currentPage;
+    const windowSize = 5;
+    const start = Math.max(1, current - Math.floor(windowSize / 2));
+    const end = Math.min(total, start + windowSize - 1);
+    const adjustedStart = Math.max(1, end - windowSize + 1);
+    return Array.from(
+      { length: end - adjustedStart + 1 },
+      (_, i) => adjustedStart + i
+    );
+  }, [pagination]);
+
+  const startIndex =
+    pagination && pagination.currentPage > 1
+      ? (pagination.currentPage - 1) * pagination.itemsPerPage
+      : 0;
 
   return (
     <div className="space-y-8">
@@ -45,37 +136,51 @@ export default function RenterManagement() {
             </thead>
 
             <tbody>
-              {renters.map((renter, index) => (
-                <tr
-                  key={renter.id}
-                  className="text-[#0B0B2C] border-b last:border-none hover:bg-gray-50 transition"
-                >
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {String(index + 1).padStart(2, "0")}
-                  </td>
-
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {renter.name}
-                  </td>
-
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {renter.email}
-                  </td>
-
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {renter.phone}
-                  </td>
-
-                  <td className="py-3 px-6 whitespace-nowrap">
-                    <button
-                      onClick={() => router.push(`/renters/${renter.id}`)}
-                      className="p-2 rounded-full hover:bg-gray-100 transition"
-                    >
-                      <Eye className="w-4 h-4 text-gray-700" />
-                    </button>
+              {status === "loading" ? (
+                <tr>
+                  <td colSpan={5} className="py-6 px-6 text-sm text-gray-500">
+                    Loading renters...
                   </td>
                 </tr>
-              ))}
+              ) : renters.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-6 px-6 text-sm text-gray-500">
+                    {error ?? "No renters found."}
+                  </td>
+                </tr>
+              ) : (
+                renters.map((renter, index) => (
+                  <tr
+                    key={renter._id}
+                    className="text-[#0B0B2C] border-b border-gray-200 last:border-none hover:bg-gray-50 transition"
+                  >
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {String(startIndex + index + 1).padStart(2, "0")}
+                    </td>
+
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {renter.fullName}
+                    </td>
+
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {renter.email}
+                    </td>
+
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {renter.phoneNumber}
+                    </td>
+
+                    <td className="py-3 px-6 whitespace-nowrap">
+                      <button
+                        onClick={() => router.push(`/renters/${renter._id}`)}
+                        className="p-2 rounded-full hover:bg-gray-100 transition"
+                      >
+                        <Eye className="w-4 h-4 text-gray-700" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -83,22 +188,47 @@ export default function RenterManagement() {
 
       {/* Footer */}
       <div className="flex justify-between items-center text-sm text-gray-600">
-        <p>No of Results {renters.length} out of 100</p>
+        <p>
+          No of Results {renters.length} out of{" "}
+          {pagination?.totalItems ?? renters.length}
+        </p>
 
         <div className="flex items-center gap-2">
-          <button className="border rounded-full p-2 text-gray-600 hover:bg-gray-100">
+          <button
+            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            disabled={!pagination?.hasPrev || status === "loading"}
+            onClick={() =>
+              pagination?.prevPage ? setPage(pagination.prevPage) : null
+            }
+          >
             &lt;
           </button>
 
-          <button className="border border-blue-500 text-blue-500 rounded-full w-8 h-8">
-            1
-          </button>
+          {pageNumbers.map((pageNumber) => {
+            const isActive = pageNumber === (pagination?.currentPage ?? 1);
+            return (
+              <button
+                key={pageNumber}
+                className={`border rounded-full w-8 h-8 ${
+                  isActive
+                    ? "border-blue-500 text-blue-500"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+                disabled={status === "loading"}
+                onClick={() => setPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
 
-          <button className="border rounded-full w-8 h-8 text-gray-600 hover:bg-gray-100">
-            2
-          </button>
-
-          <button className="border rounded-full p-2 text-gray-600 hover:bg-gray-100">
+          <button
+            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            disabled={!pagination?.hasNext || status === "loading"}
+            onClick={() =>
+              pagination?.nextPage ? setPage(pagination.nextPage) : null
+            }
+          >
             &gt;
           </button>
         </div>

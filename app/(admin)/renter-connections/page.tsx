@@ -1,122 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Eye, Trash2 } from "lucide-react";
 import { FilterModal, type FilterState } from "@/components/modals/FilterModal";
 import { useRouter } from "next/navigation";
 
-interface RenterConnection {
-  id: number;
-  requestName: string;
-  dateSubmitted: string;
-  renterName: string;
-  borough: string;
-  priceRange: string;
-  bedrooms: number;
-  bathrooms: number;
-  agentsApproved: number;
-  agentsRequested: number;
-  status: "active" | "inactive";
-}
-
-const renterConnections: RenterConnection[] = [
-  {
-    id: 1,
-    requestName: "BeforeListed-1", // ⭐ NEW
-    dateSubmitted: "11/22/2025",
-    renterName: "John Oliver",
-    borough: "Manhattan",
-    priceRange: "$7500.55",
-    bedrooms: 5,
-    bathrooms: 2,
-    agentsApproved: 2,
-    agentsRequested: 8,
-    status: "active",
-  },
-  {
-    id: 2,
-    requestName: "BeforeListed-2",
-    dateSubmitted: "11/19/2025",
-    renterName: "Adam Driver",
-    borough: "Manhattan",
-    priceRange: "$7500.55",
-    bedrooms: 5,
-    bathrooms: 2,
-    agentsApproved: 4,
-    agentsRequested: 4,
-    status: "inactive",
-  },
-  {
-    id: 3,
-    requestName: "BeforeListed-3",
-    dateSubmitted: "11/13/2025",
-    renterName: "Felix Domen",
-    borough: "Manhattan",
-    priceRange: "$7500.55",
-    bedrooms: 5,
-    bathrooms: 2,
-    agentsApproved: 5,
-    agentsRequested: 11,
-    status: "active",
-  },
-];
+import {
+  fetchAdminRequests,
+  selectAdminRequests,
+  type AdminRequest,
+} from "@/store/adminRequestsSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { log } from "console";
 
 export default function RenterConnectionPage() {
   const router = useRouter();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const dispatch = useAppDispatch();
+  const { items, status, error, pagination } =
+    useAppSelector(selectAdminRequests);
 
-  // ✅ Properly typed filter state
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [filters, setFilters] = useState<FilterState>({
-    borough: "Manhattan",
+    borough: "",
     neighborhoods: [],
-    maxPrice: 10000,
+    maxPrice: 0,
     bedrooms: [],
     bathrooms: [],
   });
 
-  const [filteredData, setFilteredData] = useState(renterConnections);
+  useEffect(() => {
+    dispatch(fetchAdminRequests({ page: currentPage }));
+  }, [currentPage, dispatch]);
 
-  const applyFilters = () => {
-    let results = renterConnections;
+  console.log(items);
+
+  const filteredData = useMemo(() => {
+    let results = items;
 
     if (filters.borough) {
-      results = results.filter((item) => item.borough === filters.borough);
+      results = results.filter((item) => {
+        const borough = item.locations?.[0]?.borough;
+        return borough === filters.borough;
+      });
+    }
+
+    if (filters.neighborhoods.length > 0) {
+      results = results.filter((item) => {
+        const neighborhoods =
+          item.locations?.flatMap((loc) => loc.neighborhoods || []) || [];
+        return filters.neighborhoods.every((n) => neighborhoods.includes(n));
+      });
     }
 
     if (filters.maxPrice) {
       results = results.filter(
-        (item) => Number(item.priceRange.replace("$", "")) <= filters.maxPrice
+        (item) => (item.priceRange?.max ?? Infinity) <= filters.maxPrice
       );
     }
 
-    // ✅ MULTI-SELECT BEDROOM FILTER FIXED
     if (filters.bedrooms.length > 0) {
       results = results.filter((item) =>
-        filters.bedrooms.includes(`${item.bedrooms}BR`)
+        item.bedrooms?.some((b) => filters.bedrooms.includes(b))
       );
     }
 
-    // ✅ MULTI-SELECT BATHROOM FILTER FIXED
     if (filters.bathrooms.length > 0) {
       results = results.filter((item) =>
-        filters.bathrooms.includes(String(item.bathrooms))
+        item.bathrooms?.some((b) => filters.bathrooms.includes(b))
       );
     }
 
-    setFilteredData(results);
-    setIsFilterOpen(false);
-  };
+    return results;
+  }, [filters, items]);
 
   const resetFilters = () => {
     setFilters({
-      borough: "Manhattan",
+      borough: "",
       neighborhoods: [],
-      maxPrice: 10000,
+      maxPrice: 0,
       bedrooms: [],
       bathrooms: [],
     });
+  };
 
-    setFilteredData(renterConnections);
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+  };
+
+  const formatMaxPrice = (item: AdminRequest) => {
+    const max = item.priceRange?.max;
+    if (max === undefined || max === null) return "-";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(max);
+  };
+
+  const handlePrev = () => {
+    if (pagination?.hasPrev && pagination.prevPage) {
+      setCurrentPage(pagination.prevPage);
+    }
+  };
+
+  const handleNext = () => {
+    if (pagination?.hasNext && pagination.nextPage) {
+      setCurrentPage(pagination.nextPage);
+    }
   };
 
   return (
@@ -135,7 +128,6 @@ export default function RenterConnectionPage() {
         </button>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-sm text-gray-800">
@@ -145,7 +137,7 @@ export default function RenterConnectionPage() {
                 <th className="px-4 py-3 text-left">Request Name</th>
                 <th className="px-4 py-3 text-left">Renter name</th>
                 <th className="px-4 py-3 text-left">Borough</th>
-                <th className="px-4 py-3 text-left">Price Range</th>
+                <th className="px-4 py-3 text-left">Max Price</th>
                 <th className="px-4 py-3 text-left">No. Bedrooms</th>
                 <th className="px-4 py-3 text-left">No. of Bath</th>
                 <th className="px-4 py-3 text-left">
@@ -156,53 +148,120 @@ export default function RenterConnectionPage() {
             </thead>
 
             <tbody>
-              {filteredData.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-t border-gray-100 hover:bg-gray-50 transition"
-                >
-                  <td className="px-4 py-3">{item.dateSubmitted}</td>
-                  <td className="px-4 py-3">{item.requestName}</td>
-                  <td className="px-4 py-3">{item.renterName}</td>
-                  <td className="px-4 py-3">{item.borough}</td>
-                  <td className="px-4 py-3">{item.priceRange}</td>
-                  <td className="px-4 py-3">{item.bedrooms}</td>
-                  <td className="px-4 py-3">{item.bathrooms}</td>
-
-                  <td className="px-4 py-3 font-semibold text-gray-900">
-                    {item.agentsApproved} / {item.agentsRequested}
-                  </td>
-
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() =>
-                          router.push(`/renter-connections/${item.id}`)
-                        }
-                        className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
-                      >
-                        <Eye size={16} className="text-gray-800" />
-                      </button>
-
-                      <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition">
-                        <Trash2 size={16} className="text-red-500" />
-                      </button>
-                    </div>
+              {status === "loading" ? (
+                <tr>
+                  <td
+                    className="px-4 py-6 text-center text-gray-600"
+                    colSpan={9}
+                  >
+                    Loading requests...
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td
+                    className="px-4 py-6 text-center text-red-600"
+                    colSpan={9}
+                  >
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredData.length === 0 ? (
+                <tr>
+                  <td
+                    className="px-4 py-6 text-center text-gray-600"
+                    colSpan={9}
+                  >
+                    No requests found.
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((item) => {
+                  const borough = item.locations?.[0]?.borough || "-";
+                  const bedrooms = item.bedrooms?.join(", ") || "-";
+                  const bathrooms = item.bathrooms?.join(", ") || "-";
+                  const agentsApproved =
+                    item.agentRequestSummary?.approved ?? 0;
+                  const agentsRequested = item.agentRequestSummary?.total ?? 0;
+                  const requestIdentifier = item._id;
+
+                  return (
+                    <tr
+                      key={item._id}
+                      className="border-t border-gray-100 hover:bg-gray-50 transition"
+                    >
+                      <td className="px-4 py-3">
+                        {formatDate(item.createdAt)}
+                      </td>
+                      <td className="px-4 py-3">{item.requestName}</td>
+                      <td className="px-4 py-3">
+                        {item.renterInfo?.fullName || "-"}
+                      </td>
+                      <td className="px-4 py-3">{borough}</td>
+                      <td className="px-4 py-3">{formatMaxPrice(item)}</td>
+                      <td className="px-4 py-3">{bedrooms}</td>
+                      <td className="px-4 py-3">{bathrooms}</td>
+
+                      <td className="px-4 py-3 font-semibold text-gray-900">
+                        {agentsApproved} / {agentsRequested}
+                      </td>
+
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/renter-connections/${requestIdentifier}`
+                              )
+                            }
+                            className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
+                          >
+                            <Eye size={16} className="text-gray-800" />
+                          </button>
+
+                          <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition">
+                            <Trash2 size={16} className="text-red-500" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Filter Modal */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-3">
+        <p className="text-sm text-gray-600">
+          Page {pagination?.currentPage ?? 1} of {pagination?.totalPages ?? 1} •{" "}
+          {pagination?.totalItems ?? filteredData.length} total
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={handlePrev}
+            disabled={!pagination?.hasPrev || status === "loading"}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={!pagination?.hasNext || status === "loading"}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         filters={filters}
         setFilters={setFilters}
-        onApply={applyFilters}
+        onApply={() => setIsFilterOpen(false)}
         onReset={resetFilters}
       />
     </section>
