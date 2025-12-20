@@ -2,129 +2,130 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RequestCard from "@/components/RequestCard";
-import Image from "next/image";
 import RenterContactCard from "@/components/RenterContactCard";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
 
-interface Request {
-  id: number;
+type Listing = {
+  _id: string;
+  requestId: string;
   requestName: string;
-  borough: string;
-  neighborhood: string;
-  dateRange: string;
-  price: string;
-  beds: number;
-  baths: number;
-  status: "active" | "deactive";
-}
+  isActive: boolean;
+  status: "active" | "deactive" | string;
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
+  locations?: Array<{
+    borough?: string;
+    neighborhoods?: string[];
+  }>;
+  movingDateRange?: {
+    earliest?: string;
+    latest?: string;
+  };
+};
 
-export default function RenterDetails() {
+type RenterDetails = {
+  _id: string;
+  email: string;
+  fullName: string;
+  phoneNumber: string;
+  referralInfo?: {
+    registrationType?: string;
+    referredByAgent?: {
+      referredBy?: string;
+      referrerName?: string;
+      referrerEmail?: string;
+    };
+  };
+  preMarketListings?: Listing[];
+  createdAt: string;
+};
+
+type RenterResponse = {
+  success: boolean;
+  message: string;
+  data: RenterDetails;
+  timestamp: string;
+};
+
+export default function RenterDetailsPage() {
   const router = useRouter();
   const { id: renterId } = useParams<{ id: string }>();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const [renter, setRenter] = useState<RenterDetails | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
 
-  // -----------------------------
-  // INITIAL REQUEST DATA
-  // -----------------------------
-  const renter = {
-    name: "John Doe",
-    email: "example@gmail.com",
-    phone: "+8801XXXXXXX",
-    image: "https://randomuser.me/api/portraits/men/31.jpg",
-    referrerName: "Tuval Mor",
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRenter = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<RenterResponse>(
+          `/renter/admin/renters/${renterId}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          },
+        );
+
+        if (!isMounted) return;
+        setRenter(response.data.data);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(
+          err instanceof Error ? err.message : "Unable to load renter details.",
+        );
+      }
+    };
+
+    if (renterId) {
+      fetchRenter();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, renterId]);
+
+  const mapDateRange = (listing?: Listing) => {
+    const earliest = listing?.movingDateRange?.earliest;
+    const latest = listing?.movingDateRange?.latest;
+    if (!earliest || !latest) return "-";
+    const earliestDate = new Date(earliest).toLocaleDateString();
+    const latestDate = new Date(latest).toLocaleDateString();
+    return `${earliestDate} - ${latestDate}`;
   };
 
-  const [requests, setRequests] = useState<Request[]>([
-    {
-      id: 1,
-      requestName: "BeforeListed-1",
-      borough: "Manhattan",
-      neighborhood: "West Chelsea",
-      dateRange: "5/21/25 - 6/21/30",
-      price: "$4,250.00",
-      beds: 2,
-      baths: 1,
-      status: "active",
-    },
-    {
-      id: 2,
-      requestName: "BeforeListed-2",
-      borough: "Brooklyn",
-      neighborhood: "Williamsburg",
-      dateRange: "5/25/25 - 1/01/24",
-      price: "$4,100.00",
-      beds: 3,
-      baths: 2,
-      status: "active",
-    },
-    {
-      id: 3,
-      requestName: "BeforeListed-3",
-      borough: "Queens",
-      neighborhood: "Astoria",
-      dateRange: "1/01/24 - 1/01/25",
-      price: "$3,950.00",
-      beds: 1,
-      baths: 1,
-      status: "deactive",
-    },
-    {
-      id: 4,
-      requestName: "BeforeListed-4",
-      borough: "Upper East Side",
-      neighborhood: "Yorkville",
-      dateRange: "7/01/25 - 8/01/25",
-      price: "$5,300.00",
-      beds: 2,
-      baths: 2,
-      status: "deactive",
-    },
-    {
-      id: 5,
-      requestName: "BeforeListed-5",
-      borough: "West Chelsea",
-      neighborhood: "Hudson Yards",
-      dateRange: "6/01/25 - 6/30/25",
-      price: "$4,800.00",
-      beds: 3,
-      baths: 2,
-      status: "active",
-    },
-  ]);
-
-  // -----------------------------
-  // DATE EXPIRED CHECK
-  // -----------------------------
-  const isExpired = (dateRange: string) => {
-    const [, end] = dateRange.split(" - ");
-    const endDate = new Date(end);
-    const today = new Date();
-
-    endDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    return today > endDate;
+  const mapLocations = (listing?: Listing) => {
+    const location = listing?.locations?.[0];
+    if (!location) return { borough: "-", neighborhood: "-" };
+    return {
+      borough: location.borough ?? "-",
+      neighborhood: location.neighborhoods?.[0] ?? "-",
+    };
   };
 
-  // -----------------------------
-  // ACTIVATE / DEACTIVATE BUTTON
-  // -----------------------------
-  const toggleRequestStatus = (id: number) => {
-    setRequests((prev) =>
-      prev.map((req) => {
-        if (req.id !== id) return req;
-
-        const expired = isExpired(req.dateRange);
-        if (expired) {
-          return { ...req, status: "deactive" };
-        }
-
-        return {
-          ...req,
-          status: req.status === "active" ? "deactive" : "active",
-        };
-      })
-    );
+  const mapPrice = (listing?: Listing) => {
+    const min = listing?.priceRange?.min;
+    const max = listing?.priceRange?.max;
+    if (min == null && max == null) return "-";
+    const format = (value?: number) =>
+      value != null ? `$${value.toLocaleString()}` : "-";
+    return `${format(min)} - ${format(max)}`;
   };
 
   return (
@@ -141,34 +142,57 @@ export default function RenterDetails() {
         <h1 className="text-3xl font-bold text-[#0B0B2C]">Renter Management</h1>
       </div>
 
-      {/* Contact */}
-      <RenterContactCard renter={renter} />
-
-      {/* REQUEST CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {requests.map((req) => {
-          const expired = isExpired(req.dateRange);
-
-          return (
-            <RequestCard
-              key={req.id}
-              requestName={req.requestName}
-              borough={req.borough}
-              neighborhood={req.neighborhood}
-              dateRange={req.dateRange}
-              price={req.price}
-              beds={req.beds}
-              baths={req.baths}
-              status={req.status}
-              disableActivate={expired}
-              onToggleStatus={() => toggleRequestStatus(req.id)}
-              onView={() =>
-                router.push(`/renters/${renterId}/requests/${req.id}`)
-              }
+      {status === "loading" ? (
+        <div className="bg-white rounded-2xl shadow-sm p-6 text-sm text-gray-500">
+          Loading renter details...
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-2xl shadow-sm p-6 text-sm text-red-600">
+          {error}
+        </div>
+      ) : renter ? (
+        <>
+          {/* Contact */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <RenterContactCard
+              renter={{
+                name: renter.fullName,
+                email: renter.email,
+                phone: renter.phoneNumber,
+                image: "https://randomuser.me/api/portraits/men/31.jpg",
+                referrerName:
+                  renter.referralInfo?.referredByAgent?.referrerName,
+                referralType: renter.referralInfo?.registrationType ?? "normal",
+              }}
             />
-          );
-        })}
-      </div>
+          </div>
+
+          {/* REQUEST CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(renter.preMarketListings ?? []).map((listing) => {
+              const { borough, neighborhood } = mapLocations(listing);
+              return (
+                <RequestCard
+                  key={listing._id}
+                  requestName={listing.requestName}
+                  borough={borough}
+                  neighborhood={neighborhood}
+                  dateRange={mapDateRange(listing)}
+                  price={mapPrice(listing)}
+                  beds={0}
+                  baths={0}
+                  status={listing.status === "active" ? "active" : "deactive"}
+                  disableActivate={listing.status !== "active"}
+                  onToggleStatus={() => null}
+                  onView={() =>
+                    router.push(`/renters/${renterId}/requests/${listing.requestId}`)
+                  }
+                />
+              );
+            })}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

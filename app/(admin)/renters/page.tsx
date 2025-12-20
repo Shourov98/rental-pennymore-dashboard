@@ -13,6 +13,17 @@ type Renter = {
   fullName: string;
   phoneNumber: string;
   totalListings: number;
+  registrationType?: string;
+  referralInfo?: {
+    registrationType?: string;
+    referredByAgentId?: string | null;
+    referredByAdminId?: string | null;
+    referredByAgent?: {
+      referredBy?: string;
+      referrerName?: string;
+      referrerEmail?: string;
+    } | null;
+  };
   createdAt: string;
 };
 
@@ -106,6 +117,14 @@ export default function RenterManagement() {
       ? (pagination.currentPage - 1) * pagination.itemsPerPage
       : 0;
 
+  const formatReferralName = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 0) return fullName;
+    const firstInitial = parts[0][0]?.toUpperCase() ?? "";
+    const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    return `${firstInitial}.${lastName}`;
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -124,62 +143,85 @@ export default function RenterManagement() {
           <table className="min-w-max w-full border-collapse">
             <thead className="bg-blue-200 text-[#0B0B2C]">
               <tr>
-                {["No", "Name", "Email", "Phone", "Actions"].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left text-sm font-semibold py-3 px-6 whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
+                {["No", "Name", "Email", "Phone", "Referaal", "Actions"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="text-left text-sm font-semibold py-3 px-6 whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
 
             <tbody>
               {status === "loading" ? (
                 <tr>
-                  <td colSpan={5} className="py-6 px-6 text-sm text-gray-500">
+                  <td colSpan={6} className="py-6 px-6 text-sm text-gray-500">
                     Loading renters...
                   </td>
                 </tr>
               ) : renters.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 px-6 text-sm text-gray-500">
+                  <td colSpan={6} className="py-6 px-6 text-sm text-gray-500">
                     {error ?? "No renters found."}
                   </td>
                 </tr>
               ) : (
-                renters.map((renter, index) => (
-                  <tr
-                    key={renter._id}
-                    className="text-[#0B0B2C] border-b border-gray-200 last:border-none hover:bg-gray-50 transition"
-                  >
-                    <td className="py-3 px-6 text-sm whitespace-nowrap">
-                      {String(startIndex + index + 1).padStart(2, "0")}
-                    </td>
+                renters.map((renter, index) => {
+                  const referralType =
+                    renter.referralInfo?.registrationType ??
+                    renter.registrationType ??
+                    "normal";
+                  const referralName =
+                    referralType === "agent_referral"
+                      ? renter.referralInfo?.referredByAgent?.referrerName
+                      : referralType === "admin_referral"
+                        ? "Admin"
+                        : "None";
 
-                    <td className="py-3 px-6 text-sm whitespace-nowrap">
-                      {renter.fullName}
-                    </td>
+                  return (
+                    <tr
+                      key={renter._id}
+                      className="text-[#0B0B2C] border-b border-gray-200 last:border-none hover:bg-gray-50 transition"
+                    >
+                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                        {String(startIndex + index + 1).padStart(2, "0")}
+                      </td>
 
-                    <td className="py-3 px-6 text-sm whitespace-nowrap">
-                      {renter.email}
-                    </td>
+                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                        {renter.fullName}
+                      </td>
 
-                    <td className="py-3 px-6 text-sm whitespace-nowrap">
-                      {renter.phoneNumber}
-                    </td>
+                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                        {renter.email}
+                      </td>
 
-                    <td className="py-3 px-6 whitespace-nowrap">
-                      <button
-                        onClick={() => router.push(`/renters/${renter._id}`)}
-                        className="p-2 rounded-full hover:bg-gray-100 transition"
-                      >
-                        <Eye className="w-4 h-4 text-gray-700" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                        {renter.phoneNumber}
+                      </td>
+
+                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                        <span className="inline-flex items-center rounded-full border border-blue-500 text-blue-600 px-2.5 py-0.5 text-xs font-semibold">
+                          {referralType === "agent_referral" && referralName
+                            ? formatReferralName(referralName)
+                            : referralName}
+                        </span>
+                      </td>
+
+                      <td className="py-3 px-6 whitespace-nowrap">
+                        <button
+                          onClick={() => router.push(`/renters/${renter._id}`)}
+                          className="p-2 rounded-full hover:bg-gray-100 transition"
+                        >
+                          <Eye className="w-4 h-4 text-gray-700" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

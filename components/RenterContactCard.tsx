@@ -9,20 +9,27 @@ export interface RenterContactCardProps {
     email: string;
     phone: string;
     referrerName?: string;
+    referralType?: "normal" | "admin_referral" | "agent_referral" | string;
   };
 }
 
 export default function RenterContactCard({ renter }: RenterContactCardProps) {
-  let badge = "";
-  if (renter.referrerName) {
-    const parts = renter.referrerName.trim().split(" ");
-    const firstName = parts[0] || "";
-    const lastName = parts[parts.length - 1] || "";
+  const formatAgentName = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    const firstName = parts[0] ?? "";
+    const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    if (!firstName) return fullName;
+    return `${firstName[0]}. ${lastName}`;
+  };
 
-    if (firstName && lastName) {
-      badge = `${firstName[0]}. ${lastName}`;
-    }
-  }
+  const referralLabel =
+    renter.referralType === "agent_referral"
+      ? renter.referrerName
+        ? formatAgentName(renter.referrerName)
+        : "None"
+      : renter.referralType === "admin_referral"
+        ? "Admin"
+        : "None";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row gap-10 items-center md:items-start">
@@ -66,11 +73,9 @@ export default function RenterContactCard({ renter }: RenterContactCardProps) {
 
           {/* Badge */}
           <div className="mt-4 md:mt-0">
-            {renter.referrerName && (
-              <span className="px-4 py-1 border border-blue-400 text-blue-500 rounded-full text-xs font-medium">
-                {badge}
-              </span>
-            )}
+            <span className="px-4 py-1 border border-blue-400 text-blue-500 rounded-full text-xs font-medium">
+              {referralLabel}
+            </span>
           </div>
         </div>
       </div>
