@@ -1,17 +1,103 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
+
+type NoticeResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    _id: string;
+    content: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
+  timestamp: string;
+};
 
 export default function NoticePage() {
   const [text, setText] = useState("");
+  const [initialText, setInitialText] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "succeeded" | "failed"
+  >("idle");
+  const [error, setError] = useState<string | null>(null);
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchNotice = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<NoticeResponse>("/notice/admin", {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+
+        if (!isMounted) return;
+        setText(response.data.data.content ?? "");
+        setInitialText(response.data.data.content ?? "");
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(err instanceof Error ? err.message : "Unable to load notice.");
+      }
+    };
+
+    fetchNotice();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken]);
 
   const handleCancel = () => {
-    setText("");
+    setText(initialText);
+    setSaveStatus("idle");
+    setError(null);
   };
 
-  const handleSave = () => {
-    alert("Notice saved:\n\n" + text);
+  const handleSave = async () => {
+    try {
+      setSaveStatus("saving");
+      setError(null);
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+
+      const response = await apiClient.put<NoticeResponse>(
+        "/notice/admin",
+        { content: text.trim() },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
+
+      setText(response.data.data.content ?? text.trim());
+      setInitialText(response.data.data.content ?? text.trim());
+      setSaveStatus("succeeded");
+    } catch (err) {
+      setSaveStatus("failed");
+      setError(err instanceof Error ? err.message : "Unable to save notice.");
+    }
   };
+
+  const isBusy = status === "loading" || saveStatus === "saving";
+  const isDirty = text.trim() !== initialText.trim();
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
@@ -22,9 +108,9 @@ export default function NoticePage() {
         <div className="flex gap-3 mt-3 md:mt-0">
           <button
             onClick={handleCancel}
-            disabled={!text.trim()}
+            disabled={!isDirty || isBusy}
             className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${
-              text.trim()
+              isDirty && !isBusy
                 ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
@@ -34,14 +120,14 @@ export default function NoticePage() {
 
           <button
             onClick={handleSave}
-            disabled={!text.trim()}
+            disabled={!text.trim() || !isDirty || isBusy}
             className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${
-              text.trim()
+              text.trim() && isDirty && !isBusy
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-blue-100 text-gray-400 cursor-not-allowed"
             }`}
           >
-            Save
+            {saveStatus === "saving" ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
@@ -52,6 +138,20 @@ export default function NoticePage() {
           Newyork City Vacancy Rate
         </h2>
 
+        {status === "loading" ? (
+          <p className="text-sm text-gray-500 mb-3">Loading notice...</p>
+        ) : null}
+
+        {error ? (
+          <p className="text-sm text-red-600 mb-3">{error}</p>
+        ) : null}
+
+        {saveStatus === "succeeded" ? (
+          <p className="text-sm text-green-600 mb-3">
+            Notice updated successfully.
+          </p>
+        ) : null}
+
         {/* Input Field */}
         <textarea
           value={text}
@@ -59,6 +159,7 @@ export default function NoticePage() {
           placeholder="Enter Text"
           rows={2}
           className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          disabled={status === "loading"}
         />
 
         {/* View Section */}
