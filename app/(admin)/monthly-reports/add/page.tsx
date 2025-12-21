@@ -2,10 +2,65 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Link } from "lucide-react";
+import { useState } from "react";
 import ReportDateSelector from "@/components/ReportDateSelector";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
+
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 export default function ReportAddPage() {
   const router = useRouter();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const [link, setLink] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+      const monthIndex = monthNames.indexOf(month) + 1;
+
+      await apiClient.post(
+        "/monthly-reports/admin",
+        {
+          link,
+          month: monthIndex,
+          year: Number(year),
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+
+      router.push("/monthly-reports");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to add report.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
@@ -14,7 +69,7 @@ export default function ReportAddPage() {
           <ArrowLeft
             size={18}
             className="cursor-pointer"
-            onClick={() => router.push("/reports")}
+            onClick={() => router.push("/monthly-reports")}
           />
           <span>Report</span>
           <span className="text-gray-400">›</span>
@@ -23,12 +78,16 @@ export default function ReportAddPage() {
 
         <div className="flex gap-3">
           <button
-            onClick={() => router.push("/reports")}
+            onClick={() => router.push("/monthly-reports")}
             className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-5 py-2.5 rounded-lg text-sm font-medium transition"
           >
             Cancel
           </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-60"
+          >
             Save
           </button>
         </div>
@@ -42,6 +101,8 @@ export default function ReportAddPage() {
             <input
               type="text"
               placeholder="Enter link"
+              value={link}
+              onChange={(event) => setLink(event.target.value)}
               className="bg-transparent outline-none text-sm text-gray-800 w-full"
             />
           </div>
@@ -50,11 +111,19 @@ export default function ReportAddPage() {
         <div>
           <p className="text-sm font-medium text-gray-700 mb-1">Date</p>
           <ReportDateSelector
-            defaultMonth="December"
-            defaultYear="2025"
-            onChange={(month, year) => console.log("Selected:", month, year)}
+            defaultMonth={month}
+            defaultYear={year}
+            onChange={(selectedMonth, selectedYear) => {
+              setMonth(selectedMonth);
+              setYear(selectedYear);
+            }}
           />
         </div>
+        {error ? (
+          <p className="text-sm text-red-500" role="alert">
+            {error}
+          </p>
+        ) : null}
       </div>
     </section>
   );

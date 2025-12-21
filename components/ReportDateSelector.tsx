@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const months = [
   "January",
@@ -29,6 +29,14 @@ export default function ReportDateSelector({
 }) {
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
   const [selectedYear, setSelectedYear] = useState(defaultYear);
+
+  useEffect(() => {
+    setSelectedMonth(defaultMonth);
+  }, [defaultMonth]);
+
+  useEffect(() => {
+    setSelectedYear(defaultYear);
+  }, [defaultYear]);
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
