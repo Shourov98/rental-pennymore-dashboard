@@ -1,54 +1,119 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Download } from "lucide-react";
-import { useState } from "react";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
+
+type AgentUser = {
+  _id: string;
+  email: string;
+  phoneNumber: string;
+  fullName: string;
+  accountStatus?: string;
+};
+
+type Agent = {
+  _id: string;
+  userId: AgentUser;
+  isActive: boolean;
+  createdAt: string;
+};
+
+type Pagination = {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
+
+type AgentsResponse = {
+  success: boolean;
+  message: string;
+  data: Agent[];
+  pagination: Pagination;
+  timestamp: string;
+};
 
 export default function AgentManagement() {
   const router = useRouter();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
-  const [agents, setAgents] = useState([
-    {
-      id: 1,
-      name: "Nick Albasta",
-      email: "example@gmail.com",
-      phone: "+9595999659",
-      access: true,
-      firstMatch: "2025-01-12",
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      email: "sarah@gmail.com",
-      phone: "+1 333 777 1212",
-      access: false,
-      firstMatch: null,
-    },
-    {
-      id: 3,
-      name: "David Miller",
-      email: "david@example.com",
-      phone: "+1 888 443 7721",
-      access: true,
-      firstMatch: null,
-    },
-    {
-      id: 4,
-      name: "Emma Stone",
-      email: "emma@example.com",
-      phone: "+44 555 221 453",
-      access: false,
-      firstMatch: "2025-02-01",
-    },
-  ]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // Toggle access
-  const toggleAccess = (id: number) => {
+  const toggleAccess = (id: string) => {
     setAgents((prev) =>
       prev.map((agent) =>
-        agent.id === id ? { ...agent, access: !agent.access } : agent
+        agent._id === id ? { ...agent, isActive: !agent.isActive } : agent
       )
     );
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchAgents = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<AgentsResponse>(
+          "/agent/admin/all",
+          {
+            params: { page, limit },
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          }
+        );
+
+        if (!isMounted) return;
+        setAgents(response.data.data);
+        setPagination(response.data.pagination);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(err instanceof Error ? err.message : "Unable to load agents.");
+      }
+    };
+
+    fetchAgents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, page]);
+
+  const pageNumbers = useMemo(() => {
+    if (!pagination) return [];
+    const total = pagination.pages;
+    const current = pagination.page;
+    const windowSize = 5;
+    const start = Math.max(1, current - Math.floor(windowSize / 2));
+    const end = Math.min(total, start + windowSize - 1);
+    const adjustedStart = Math.max(1, end - windowSize + 1);
+    return Array.from(
+      { length: end - adjustedStart + 1 },
+      (_, i) => adjustedStart + i
+    );
+  }, [pagination]);
+
+  const formatDate = (value: string | null | undefined) => {
+    if (!value) return "Not Yet";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Not Yet";
+    return date.toISOString().slice(0, 10);
   };
 
   return (
@@ -70,7 +135,7 @@ export default function AgentManagement() {
             <thead className="bg-blue-200 text-[#0B0B2C]">
               <tr>
                 {[
-                  "First Match",
+                  "Register Date",
                   "Name",
                   "Email",
                   "Phone",
@@ -88,70 +153,76 @@ export default function AgentManagement() {
             </thead>
 
             <tbody>
-              {agents.map((agent) => (
-                <tr
-                  key={agent.id}
-                  className="border-b border-gray-200 text-black last:border-none hover:bg-gray-50 transition"
-                >
-                  {/* First Match */}
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {agent.firstMatch ? agent.firstMatch : "Not Yet"}
-                  </td>
-
-                  {/* Name */}
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {agent.name}
-                  </td>
-
-                  {/* Email */}
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {agent.email}
-                  </td>
-
-                  {/* Phone */}
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    {agent.phone}
-                  </td>
-
-                  {/* STATUS */}
-                  <td className="py-3 px-6 text-sm whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        agent.access
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {agent.access ? "Active" : "Deactive"}
-                    </span>
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td className="py-3 px-6 flex items-center gap-3 whitespace-nowrap">
-                    {/* Toggle Access */}
-                    <button
-                      onClick={() => toggleAccess(agent.id)}
-                      className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
-                        agent.access
-                          ? "bg-red-500 hover:bg-red-600 text-white"
-                          : "bg-green-500 hover:bg-green-600 text-white"
-                      }`}
-                    >
-                      {agent.access ? "Deactivate" : "Activate"}
-                    </button>
-
-                    {/* View Button */}
-                    <button
-                      onClick={() =>
-                        router.push(`/agent-management/${agent.id}`)
-                      }
-                      className="p-2 rounded-full hover:bg-gray-100 transition"
-                    >
-                      <Eye className="w-4 h-4 text-gray-700" />
-                    </button>
+              {status === "loading" ? (
+                <tr>
+                  <td colSpan={6} className="py-6 px-6 text-sm text-gray-500">
+                    Loading agents...
                   </td>
                 </tr>
-              ))}
+              ) : agents.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6 px-6 text-sm text-gray-500">
+                    {error ?? "No agents found."}
+                  </td>
+                </tr>
+              ) : (
+                agents.map((agent) => (
+                  <tr
+                    key={agent._id}
+                    className="border-b border-gray-200 text-black last:border-none hover:bg-gray-50 transition"
+                  >
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {formatDate(agent.createdAt)}
+                    </td>
+
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {agent.userId?.fullName ?? "Unknown"}
+                    </td>
+
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {agent.userId?.email ?? "Unknown"}
+                    </td>
+
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      {agent.userId?.phoneNumber ?? "Unknown"}
+                    </td>
+
+                    <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          agent.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {agent.isActive ? "Active" : "Deactive"}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-6 flex items-center gap-3 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleAccess(agent._id)}
+                        className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
+                          agent.isActive
+                            ? "bg-red-500 hover:bg-red-600 text-white"
+                            : "bg-green-500 hover:bg-green-600 text-white"
+                        }`}
+                      >
+                        {agent.isActive ? "Deactivate" : "Activate"}
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          router.push(`/agent-management/${agent.userId._id}`)
+                        }
+                        className="p-2 rounded-full hover:bg-gray-100 transition"
+                      >
+                        <Eye className="w-4 h-4 text-gray-700" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -159,22 +230,57 @@ export default function AgentManagement() {
 
       {/* Footer */}
       <div className="flex justify-between items-center text-sm text-gray-600">
-        <p>No of Results {agents.length} out of 100</p>
+        <p>
+          No of Results {agents.length} out of{" "}
+          {pagination?.total ?? agents.length}
+        </p>
 
         <div className="flex items-center gap-2">
-          <button className="border rounded-full p-2 text-gray-600 hover:bg-gray-100">
+          <button
+            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            disabled={
+              !pagination || pagination.page <= 1 || status === "loading"
+            }
+            onClick={() =>
+              pagination?.page && pagination.page > 1
+                ? setPage(pagination.page - 1)
+                : null
+            }
+          >
             &lt;
           </button>
 
-          <button className="border border-blue-500 bg-blue-300 text-blue-600 rounded-full w-8 h-8">
-            1
-          </button>
+          {pageNumbers.map((pageNumber) => {
+            const isActive = pageNumber === (pagination?.page ?? 1);
+            return (
+              <button
+                key={pageNumber}
+                className={`border rounded-full w-8 h-8 ${
+                  isActive
+                    ? "border-blue-500 text-blue-500"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+                disabled={status === "loading"}
+                onClick={() => setPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
 
-          <button className="border rounded-full w-8 h-8 text-gray-600 hover:bg-gray-100">
-            2
-          </button>
-
-          <button className="border rounded-full p-2 text-gray-600 hover:bg-gray-100">
+          <button
+            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            disabled={
+              !pagination ||
+              pagination.page >= pagination.pages ||
+              status === "loading"
+            }
+            onClick={() =>
+              pagination?.page && pagination.page < pagination.pages
+                ? setPage(pagination.page + 1)
+                : null
+            }
+          >
             &gt;
           </button>
         </div>

@@ -2,10 +2,80 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Pencil, Lock } from "lucide-react";
+import { Pencil, Lock, Copy } from "lucide-react";
+import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
+
+type ProfileData = {
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
+  referralLink?: string;
+  profileImage?: string | null;
+};
+
+type ProfileResponse = {
+  success: boolean;
+  message: string;
+  data: ProfileData;
+  timestamp: string;
+};
 
 export default function ProfilePage() {
   const router = useRouter();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<ProfileResponse>("/user/profile", {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+
+        if (!isMounted) return;
+        setProfile(response.data.data);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(
+          err instanceof Error ? err.message : "Unable to load profile."
+        );
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken]);
+
+  const handleCopyReferral = async () => {
+    if (!profile?.referralLink) return;
+    try {
+      await navigator.clipboard.writeText(profile.referralLink);
+      setIsCopied(true);
+      window.setTimeout(() => setIsCopied(false), 1500);
+    } catch (err) {
+      setError("Unable to copy referral link.");
+    }
+  };
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
@@ -25,7 +95,7 @@ export default function ProfilePage() {
         {/* Profile Image */}
         <div className="w-40 h-40 rounded-full overflow-hidden">
           <Image
-            src="https://i.pravatar.cc/150?img=3"
+            src={profile?.profileImage ?? "https://i.pravatar.cc/150?img=3"}
             alt="Profile"
             width={160}
             height={160}
@@ -39,30 +109,53 @@ export default function ProfilePage() {
             Personal Information
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 text-sm text-gray-800">
-            <div>
-              <p className="text-gray-500">Name</p>
-              <p className="border-b border-gray-300 pb-1">John Doe</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Phone no</p>
-              <p className="border-b border-gray-300 pb-1">+1 9592626</p>
-            </div>
+          {status === "loading" ? (
+            <p className="text-sm text-gray-500">Loading profile...</p>
+          ) : profile ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 text-sm text-gray-800">
+              <div>
+                <p className="text-gray-500">Name</p>
+                <p className="border-b border-gray-300 pb-1">
+                  {profile.fullName ?? "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500">Phone no</p>
+                <p className="border-b border-gray-300 pb-1">
+                  {profile.phoneNumber ?? "N/A"}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-gray-500">License No.</p>
-              <p className="border-b border-gray-300 pb-1">561616</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Brokerage name</p>
-              <p className="border-b border-gray-300 pb-1">Alice</p>
-            </div>
+              <div>
+                <p className="text-gray-500">Email</p>
+                <p className="border-b border-gray-300 pb-1">
+                  {profile.email ?? "N/A"}
+                </p>
+              </div>
 
-            <div className="md:col-span-2">
-              <p className="text-gray-500">Email</p>
-              <p className="border-b border-gray-300 pb-1">john@gmail.com</p>
+              <div className="md:col-span-2">
+                <p className="text-gray-500">Referral Link</p>
+                <div className="flex items-center gap-3 border-b border-gray-300 pb-1">
+                  <p className="break-all text-gray-800">
+                    {profile.referralLink ?? "N/A"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCopyReferral}
+                    disabled={!profile.referralLink}
+                    className="flex items-center gap-1 text-blue-600 text-xs font-medium hover:underline disabled:opacity-60"
+                  >
+                    <Copy size={14} />
+                    {isCopied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              {error ?? "No profile data available."}
+            </p>
+          )}
 
           {/* Change Password */}
           <button className="mt-6 flex items-center gap-2 text-blue-600 font-medium text-sm hover:underline">

@@ -2,18 +2,142 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Camera, User, Phone, BadgeCheck } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Camera, User, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
+
+type ProfileData = {
+  fullName?: string;
+  phoneNumber?: string;
+  profileImageUrl?: string | null;
+};
+
+type ProfileResponse = {
+  success: boolean;
+  message: string;
+  data: ProfileData;
+  timestamp: string;
+};
+
+type UploadResponse = {
+  success?: boolean;
+  message?: string;
+  data?: {
+    profileImageUrl?: string;
+    url?: string;
+  };
+};
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [image, setImage] = useState("https://i.pravatar.cc/150?img=3");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<ProfileResponse>("/user/profile", {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+
+        if (!isMounted) return;
+        setFullName(response.data.data.fullName ?? "");
+        setPhoneNumber(response.data.data.phoneNumber ?? "");
+        if (response.data.data.profileImageUrl) {
+          setImage(response.data.data.profileImageUrl);
+        }
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(
+          err instanceof Error ? err.message : "Unable to load profile."
+        );
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setImage(url);
+      setImageFile(file);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        const uploadResponse = await apiClient.post<UploadResponse>(
+          "/file/upload-profile-image",
+          formData,
+          {
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        const uploadedUrl =
+          uploadResponse.data?.data?.profileImageUrl ??
+          uploadResponse.data?.data?.url;
+        if (uploadedUrl) {
+          setImage(uploadedUrl);
+        }
+      }
+
+      await apiClient.put(
+        "/user/profile",
+        {
+          fullName,
+          phoneNumber,
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+
+      router.push("/profile");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to update profile."
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -41,7 +165,11 @@ export default function EditProfilePage() {
           >
             Cancel
           </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition">
+          <button
+            onClick={handleSave}
+            disabled={isSaving || status === "loading"}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-60"
+          >
             Save
           </button>
         </div>
@@ -87,6 +215,8 @@ export default function EditProfilePage() {
               <input
                 type="text"
                 placeholder="Name"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
                 className="bg-transparent outline-none text-sm text-gray-800 w-full"
               />
             </div>
@@ -100,40 +230,20 @@ export default function EditProfilePage() {
               <input
                 type="text"
                 placeholder="Phone no"
+                value={phoneNumber}
+                onChange={(event) => setPhoneNumber(event.target.value)}
                 className="bg-transparent outline-none text-sm text-gray-800 w-full"
               />
             </div>
           </div>
-
-          {/* License No. */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-1">
-              License No.
+          {status === "loading" ? (
+            <p className="text-sm text-gray-500">Loading profile...</p>
+          ) : null}
+          {error ? (
+            <p className="text-sm text-red-500" role="alert">
+              {error}
             </p>
-            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-blue-500 transition">
-              <BadgeCheck size={18} className="text-blue-500 mr-2" />
-              <input
-                type="text"
-                placeholder="Enter number"
-                className="bg-transparent outline-none text-sm text-gray-800 w-full"
-              />
-            </div>
-          </div>
-
-          {/* Brokerage Name */}
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-1">
-              Brokerage Name
-            </p>
-            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-blue-500 transition">
-              <User size={18} className="text-blue-500 mr-2" />
-              <input
-                type="text"
-                placeholder="Name"
-                className="bg-transparent outline-none text-sm text-gray-800 w-full"
-              />
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </section>

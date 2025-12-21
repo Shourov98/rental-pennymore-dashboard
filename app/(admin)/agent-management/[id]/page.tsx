@@ -1,26 +1,214 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import AgentContactCard from "@/components/AgentContactCard";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
+
+type AgentUser = {
+  _id: string;
+  email: string;
+  phoneNumber: string;
+  fullName: string;
+  accountStatus?: string;
+};
+
+type AgentDetail = {
+  _id: string;
+  userId: AgentUser;
+  licenseNumber: string;
+  brokerageName: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type AgentDetailResponse = {
+  success: boolean;
+  message: string;
+  data: AgentDetail;
+  timestamp: string;
+};
+
+type AccessStatusResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    agentId: string;
+    hasGrantAccess: boolean;
+    toggleHistory: unknown[];
+  };
+  timestamp: string;
+};
 
 export default function AgentDetailsPage() {
   const router = useRouter();
-  const [grantFree, setGrantFree] = useState(false);
+  const params = useParams<{ id: string }>();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const [agent, setAgent] = useState<AgentDetail | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [isToggling, setIsToggling] = useState(false);
+  const [hasGrantAccess, setHasGrantAccess] = useState(false);
+  const [accessStatus, setAccessStatus] = useState<
+    "idle" | "loading" | "failed"
+  >("idle");
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const [isTogglingAccess, setIsTogglingAccess] = useState(false);
 
-  const agent = {
-    name: "John Doe",
-    email: "example@gmail.com",
-    phone: "+8801XXXXXXX",
-    license: "56666666",
-    brokerage: "Alice",
-    image: "https://randomuser.me/api/portraits/men/31.jpg",
+  const agentId = params?.id;
+
+  useEffect(() => {
+    if (!agentId) return;
+    let isMounted = true;
+
+    const fetchAgent = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<AgentDetailResponse>(
+          `/agent/admin/${agentId}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          }
+        );
+
+        if (!isMounted) return;
+        setAgent(response.data.data);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(err instanceof Error ? err.message : "Unable to load agent.");
+      }
+    };
+
+    fetchAgent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, agentId]);
+
+  useEffect(() => {
+    if (!agentId) return;
+    let isMounted = true;
+
+    const fetchAccessStatus = async () => {
+      try {
+        setAccessStatus("loading");
+        setAccessError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<AccessStatusResponse>(
+          `/agent/${agentId}/access-status`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          }
+        );
+
+        if (!isMounted) return;
+        setHasGrantAccess(response.data.data.hasGrantAccess);
+        setAccessStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setAccessStatus("failed");
+        setAccessError(
+          err instanceof Error ? err.message : "Unable to load access status."
+        );
+      }
+    };
+
+    fetchAccessStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, agentId]);
+
+  const contactCardAgent = useMemo(() => {
+    if (!agent) return null;
+    return {
+      name: agent.userId?.fullName ?? "Unknown",
+      email: agent.userId?.email ?? "Unknown",
+      phone: agent.userId?.phoneNumber ?? "Unknown",
+      license: agent.licenseNumber ?? "N/A",
+      brokerage: agent.brokerageName ?? "N/A",
+      image: "https://randomuser.me/api/portraits/men/31.jpg",
+    };
+  }, [agent]);
+
+  const handleToggleAccess = async () => {
+    if (!agentId || !agent) return;
+    try {
+      setIsToggling(true);
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+
+      const response = await apiClient.post<AgentDetailResponse>(
+        `/agent/admin/${agentId}/toggle-active`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+
+      setAgent(response.data.data ?? { ...agent, isActive: !agent.isActive });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to update agent status."
+      );
+    } finally {
+      setIsToggling(false);
+    }
   };
 
-  const handleToggleAccess = () => {
-    setGrantFree((prev) => !prev);
+  const handleToggleGrantAccess = async () => {
+    if (!agentId) return;
+    try {
+      setIsTogglingAccess(true);
+      setAccessError(null);
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+
+      const response = await apiClient.post<AccessStatusResponse>(
+        `/agent/${agentId}/toggle-access`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+
+      if (response.data.data?.hasGrantAccess !== undefined) {
+        setHasGrantAccess(response.data.data.hasGrantAccess);
+      } else {
+        setHasGrantAccess((prev) => !prev);
+      }
+    } catch (err) {
+      setAccessError(
+        err instanceof Error ? err.message : "Unable to update access."
+      );
+    } finally {
+      setIsTogglingAccess(false);
+    }
   };
 
   return (
@@ -30,7 +218,7 @@ export default function AgentDetailsPage() {
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
           <ArrowLeft
             className="w-4 h-4 cursor-pointer"
-            onClick={() => router.push("/admin/agents")}
+            onClick={() => router.push("/agent-management")}
           />
           <span>Agent Management</span> <span>›</span> <span>View Agent</span>
         </div>
@@ -40,7 +228,40 @@ export default function AgentDetailsPage() {
       </div>
 
       {/* Contact Details */}
-      <AgentContactCard agent={agent} />
+      {status === "loading" ? (
+        <div className="bg-white rounded-2xl shadow-sm p-6 text-sm text-gray-500">
+          Loading agent...
+        </div>
+      ) : contactCardAgent ? (
+        <AgentContactCard agent={contactCardAgent} />
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm p-6 text-sm text-gray-500">
+          {error ?? "No agent found."}
+        </div>
+      )}
+
+      {/* Status Toggle */}
+      <div className="bg-white rounded-2xl shadow-sm p-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-semibold text-[#0B0B2C]">
+            Agent Status
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Activate or deactivate the agent account.
+          </p>
+        </div>
+        <button
+          onClick={handleToggleAccess}
+          disabled={!agent || isToggling}
+          className={`px-6 py-2.5 text-sm font-medium rounded-2xl transition disabled:opacity-60 ${
+            agent?.isActive
+              ? "bg-red-500 hover:bg-red-600 text-white"
+              : "bg-blue-500 hover:bg-blue-600 text-white"
+          }`}
+        >
+          {agent?.isActive ? "Deactivate" : "Activate"}
+        </button>
+      </div>
 
       {/* Grant Access */}
       <div className="bg-white rounded-2xl shadow-sm p-6 flex justify-between items-center">
@@ -53,16 +274,22 @@ export default function AgentDetailsPage() {
           </p>
         </div>
         <button
-          onClick={handleToggleAccess}
-          className={`px-6 py-2.5 text-sm font-medium rounded-2xl transition ${
-            grantFree
+          onClick={handleToggleGrantAccess}
+          disabled={accessStatus === "loading" || isTogglingAccess}
+          className={`px-6 py-2.5 text-sm font-medium rounded-2xl transition disabled:opacity-60 ${
+            hasGrantAccess
               ? "bg-red-500 hover:bg-red-600 text-white"
               : "bg-blue-500 hover:bg-blue-600 text-white"
           }`}
         >
-          {grantFree ? "Revoke Access" : "Grant Access"}
+          {hasGrantAccess ? "Revoke Access" : "Grant Access"}
         </button>
       </div>
+      {error || accessError ? (
+        <p className="text-sm text-red-500" role="alert">
+          {error ?? accessError}
+        </p>
+      ) : null}
     </div>
   );
 }
