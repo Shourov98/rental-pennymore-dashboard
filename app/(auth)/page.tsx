@@ -2,11 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const router = useRouter();
-
   return (
     <div className="w-full">
       {/* Logo */}
@@ -28,20 +25,19 @@ export default function Home() {
       </h2>
 
       {/* Form */}
-      <form className="space-y-5 sm:space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         {/* Login Button */}
-        <button
-          type="submit"
-          onClick={() => router.push("/signin")}
+        <Link
+          href="/signin"
           className="
-                w-full bg-action bg-blue-500 hover:bg-blue-700 text-text-inverted
+                w-full block text-center bg-action bg-blue-500 hover:bg-blue-700 text-text-inverted
                 py-3 sm:py-3.5 rounded-xl
                 transition
               "
         >
           Login
-        </button>
-      </form>
+        </Link>
+      </div>
     </div>
   );
 }
