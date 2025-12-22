@@ -47,6 +47,17 @@ type RentersResponse = {
   timestamp: string;
 };
 
+type RenterExcelResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    downloadUrl?: {
+      url: string;
+      key: string;
+    };
+  };
+};
+
 export default function RenterManagement() {
   const router = useRouter();
   const accessToken = useAppSelector((state) => state.auth.accessToken);
@@ -54,8 +65,21 @@ export default function RenterManagement() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [exportStatus, setExportStatus] = useState<
+    "idle" | "loading" | "failed"
+  >("idle");
+  const [exportError, setExportError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const limit = 10;
+
+  const downloadFile = (url: string) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -98,6 +122,40 @@ export default function RenterManagement() {
     };
   }, [accessToken, page]);
 
+  const handleExport = async () => {
+    try {
+      setExportStatus("loading");
+      setExportError(null);
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+
+      const response = await apiClient.get<RenterExcelResponse>(
+        "/renter/admin/excel-download",
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
+
+      const downloadUrl = response.data.data?.downloadUrl?.url;
+      if (!downloadUrl) {
+        throw new Error("Download URL not available.");
+      }
+
+      downloadFile(downloadUrl);
+      setExportStatus("idle");
+    } catch (err) {
+      setExportStatus("failed");
+      setExportError(
+        err instanceof Error ? err.message : "Unable to export renters.",
+      );
+    }
+  };
+
+  const isExporting = exportStatus === "loading";
+
   const pageNumbers = useMemo(() => {
     if (!pagination) return [];
     const total = pagination.totalPages;
@@ -131,11 +189,22 @@ export default function RenterManagement() {
       <div className="bg-white rounded-2xl shadow-sm p-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-[#0B0B2C]">Renter Management</h1>
 
-        <button className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2.5 rounded-2xl transition">
+        <button
+          onClick={handleExport}
+          disabled={isExporting}
+          className={`flex items-center gap-2 text-white text-sm font-medium px-5 py-2.5 rounded-2xl transition ${
+            isExporting
+              ? "bg-blue-300 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600"
+          }`}
+        >
           <Download className="w-4 h-4" />
-          Export Data
+          {isExporting ? "Exporting..." : "Export Data"}
         </button>
       </div>
+      {exportError ? (
+        <p className="text-sm text-red-600">{exportError}</p>
+      ) : null}
 
       {/* TABLE WRAPPER — scrollable */}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
