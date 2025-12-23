@@ -156,11 +156,6 @@ export default function ProfilePage() {
               {error ?? "No profile data available."}
             </p>
           )}
-
-          {/* Change Password */}
-          <button className="mt-6 flex items-center gap-2 text-blue-600 font-medium text-sm hover:underline">
-            <Lock size={16} /> Change Password →
-          </button>
         </div>
       </div>
     </section>

@@ -2,33 +2,106 @@
 
 import { useState, useEffect } from "react";
 import { Copy, Wallet } from "lucide-react";
+import { apiClient } from "@/lib/apiClient";
+import { selectAuth } from "@/store/auth/authSlice";
+import { useAppSelector } from "@/store/hooks";
+
+type MonthlyIncomeResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    month: string;
+    monthName: string;
+    totalRevenue: number;
+    paymentCount: number;
+    averagePayment: number;
+    currency: string;
+  };
+};
 
 export default function AdminDashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
-  const now = new Date();
+  const { user, accessToken } = useAppSelector(selectAuth);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+  const [incomeStatus, setIncomeStatus] = useState<
+    "idle" | "loading" | "failed"
+  >("idle");
+  const [incomeError, setIncomeError] = useState<string | null>(null);
+  const [monthlyIncome, setMonthlyIncome] =
+    useState<MonthlyIncomeResponse["data"] | null>(null);
 
-  const defaultLink =
+  const referralLink =
+    user?.referralLink ??
     "https://premarket-platform.com/referral/special-link-2025";
 
   // Initialize date values
   useEffect(() => {
-    const month = now.toLocaleString("default", { month: "long" });
-    const year = now.getFullYear().toString();
-    setSelectedMonth(month);
-    setSelectedYear(year);
+    const now = new Date();
+    setSelectedMonth(String(now.getMonth() + 1));
+    setSelectedYear(String(now.getFullYear()));
   }, []);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(defaultLink);
+    navigator.clipboard.writeText(referralLink);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 1500);
   };
 
+  useEffect(() => {
+    if (!selectedYear || !selectedMonth) return;
+
+    let isMounted = true;
+
+    const fetchMonthlyIncome = async () => {
+      try {
+        setIncomeStatus("loading");
+        setIncomeError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<MonthlyIncomeResponse>(
+          `/grant-access/admin/income/monthly/${selectedYear}/${selectedMonth}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          },
+        );
+
+        if (!isMounted) return;
+        setMonthlyIncome(response.data.data);
+        setIncomeStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setIncomeStatus("failed");
+        setIncomeError(
+          err instanceof Error ? err.message : "Unable to load income data.",
+        );
+      }
+    };
+
+    fetchMonthlyIncome();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, selectedMonth, selectedYear]);
+
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    { value: "1", label: "January" },
+    { value: "2", label: "February" },
+    { value: "3", label: "March" },
+    { value: "4", label: "April" },
+    { value: "5", label: "May" },
+    { value: "6", label: "June" },
+    { value: "7", label: "July" },
+    { value: "8", label: "August" },
+    { value: "9", label: "September" },
+    { value: "10", label: "October" },
+    { value: "11", label: "November" },
+    { value: "12", label: "December" },
   ];
 
   const years = Array.from({ length: 6 }, (_, i) =>
@@ -62,7 +135,7 @@ export default function AdminDashboard() {
         <input
           type="text"
           readOnly
-          value={defaultLink}
+          value={referralLink}
           className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none"
         />
       </div>
@@ -81,8 +154,10 @@ export default function AdminDashboard() {
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-full text-sm focus:outline-none w-full sm:w-auto"
             >
-              {months.map((m) => (
-                <option key={m}>{m}</option>
+              {months.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
               ))}
             </select>
 
@@ -102,7 +177,19 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 flex items-center justify-between">
           <div>
             <p className="text-gray-600 text-sm font-medium">Total</p>
-            <h3 className="text-2xl sm:text-3xl font-bold text-[#0B0B2C]">$120</h3>
+            {incomeStatus === "loading" ? (
+              <h3 className="text-2xl sm:text-3xl font-bold text-[#0B0B2C]">
+                Loading...
+              </h3>
+            ) : (
+              <h3 className="text-2xl sm:text-3xl font-bold text-[#0B0B2C]">
+                {monthlyIncome?.currency ?? "USD"}{" "}
+                {monthlyIncome?.totalRevenue?.toLocaleString() ?? "0"}
+              </h3>
+            )}
+            {incomeError ? (
+              <p className="text-sm text-red-600 mt-2">{incomeError}</p>
+            ) : null}
           </div>
 
           <div className="bg-blue-100 p-4 rounded-full">

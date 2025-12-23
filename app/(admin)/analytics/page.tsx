@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -11,25 +11,181 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { DollarSign } from "lucide-react";
+import { apiClient } from "@/lib/apiClient";
+import { selectAuth } from "@/store/auth/authSlice";
+import { useAppSelector } from "@/store/hooks";
+
+type YearlyIncomeResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    year: number;
+    totalRevenue: number;
+    totalPayments: number;
+    monthlyBreakdown: Array<{
+      month: string;
+      monthName: string;
+      totalRevenue: number;
+      paymentCount: number;
+      averagePayment: number;
+      currency: string;
+    }>;
+  };
+};
+
+type MonthlyIncomeResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    month: string;
+    monthName: string;
+    totalRevenue: number;
+    paymentCount: number;
+    averagePayment: number;
+    currency: string;
+  };
+};
 
 const months = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  { value: 1, short: "Jan", label: "January" },
+  { value: 2, short: "Feb", label: "February" },
+  { value: 3, short: "Mar", label: "March" },
+  { value: 4, short: "Apr", label: "April" },
+  { value: 5, short: "May", label: "May" },
+  { value: 6, short: "Jun", label: "June" },
+  { value: 7, short: "Jul", label: "July" },
+  { value: 8, short: "Aug", label: "August" },
+  { value: 9, short: "Sep", label: "September" },
+  { value: 10, short: "Oct", label: "October" },
+  { value: 11, short: "Nov", label: "November" },
+  { value: 12, short: "Dec", label: "December" },
 ];
 
-// Dummy revenue data
-const monthlyData = months.map((month) => ({
-  name: month,
-  revenue: Math.floor(Math.random() * 80) + 20,
-}));
-
-const years = Array.from({ length: 10 }, (_, i) => 2025 - i);
-
 export default function AnalyticsPage() {
-  const [selectedMonth, setSelectedMonth] = useState("Month");
-  const [selectedYear, setSelectedYear] = useState("Year");
+  const { accessToken } = useAppSelector(selectAuth);
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    now.getMonth() + 1,
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    now.getFullYear(),
+  );
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [yearlyIncome, setYearlyIncome] = useState<
+    YearlyIncomeResponse["data"] | null
+  >(null);
+  const [monthlyStatus, setMonthlyStatus] = useState<
+    "idle" | "loading" | "failed"
+  >("idle");
+  const [monthlyError, setMonthlyError] = useState<string | null>(null);
+  const [monthlyIncome, setMonthlyIncome] = useState<
+    MonthlyIncomeResponse["data"] | null
+  >(null);
 
-  const totalRevenue = "$120";
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchYearlyIncome = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<YearlyIncomeResponse>(
+          `/grant-access/admin/income/${selectedYear}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          },
+        );
+
+        if (!isMounted) return;
+        setYearlyIncome(response.data.data);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(
+          err instanceof Error ? err.message : "Unable to load income data.",
+        );
+      }
+    };
+
+    fetchYearlyIncome();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, selectedYear]);
+
+  useEffect(() => {
+    if (!selectedYear || !selectedMonth) return;
+    let isMounted = true;
+
+    const fetchMonthlyIncome = async () => {
+      try {
+        setMonthlyStatus("loading");
+        setMonthlyError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<MonthlyIncomeResponse>(
+          `/grant-access/admin/income/monthly/${selectedYear}/${selectedMonth}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          },
+        );
+
+        if (!isMounted) return;
+        setMonthlyIncome(response.data.data);
+        setMonthlyStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setMonthlyStatus("failed");
+        setMonthlyError(
+          err instanceof Error ? err.message : "Unable to load monthly income.",
+        );
+      }
+    };
+
+    fetchMonthlyIncome();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, selectedMonth, selectedYear]);
+
+  const monthlyData = useMemo(() => {
+    const lookup = new Map<number, number>();
+    yearlyIncome?.monthlyBreakdown.forEach((item) => {
+      const [, monthValue] = item.month.split("-");
+      const monthNumber = Number(monthValue);
+      if (!Number.isNaN(monthNumber)) {
+        lookup.set(monthNumber, item.totalRevenue);
+      }
+    });
+
+    return months.map((month) => ({
+      name: month.short,
+      revenue: lookup.get(month.value) ?? 0,
+    }));
+  }, [yearlyIncome]);
+
+  const totalRevenue = yearlyIncome?.totalRevenue ?? 0;
+  const totalCurrency =
+    yearlyIncome?.monthlyBreakdown?.[0]?.currency ?? "USD";
+  const monthLabel =
+    months.find((month) => month.value === selectedMonth)?.label ??
+    "Selected month";
+
+  const years = Array.from({ length: 10 }, (_, i) => now.getFullYear() - i);
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 sm:px-6 md:px-8 py-6 space-y-6">
@@ -50,23 +206,25 @@ export default function AnalyticsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <select
             value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
             className="bg-blue-100 text-black rounded-lg px-4 py-2 text-sm sm:text-base font-medium focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
           >
-            <option>Month</option>
-            {months.map((m) => (
-              <option key={m}>{m}</option>
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
             ))}
           </select>
 
           <select
             value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
             className="bg-blue-100 text-black rounded-lg px-4 py-2 text-sm sm:text-base font-medium focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
           >
-            <option>Year</option>
             {years.map((y) => (
-              <option key={y}>{y}</option>
+              <option key={y} value={y}>
+                {y}
+              </option>
             ))}
           </select>
         </div>
@@ -75,10 +233,19 @@ export default function AnalyticsPage() {
       {/* Total Revenue Box */}
       <div className="bg-white rounded-xl shadow-sm p-5 sm:p-6 flex justify-between items-center">
         <div>
-          <p className="text-sm font-medium text-gray-700">Total</p>
+          <p className="text-sm font-medium text-gray-700">
+            {monthLabel} Total
+          </p>
           <h2 className="text-2xl sm:text-3xl font-semibold text-[#0A093D]">
-            {totalRevenue}
+            {monthlyStatus === "loading"
+              ? "Loading..."
+              : `${monthlyIncome?.currency ?? "USD"} ${(
+                  monthlyIncome?.totalRevenue ?? 0
+                ).toLocaleString()}`}
           </h2>
+          {monthlyError ? (
+            <p className="text-sm text-red-600 mt-2">{monthlyError}</p>
+          ) : null}
         </div>
 
         <div className="bg-blue-500 text-white p-3 rounded-full">
@@ -95,12 +262,13 @@ export default function AnalyticsPage() {
 
           <select
             value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
             className="bg-blue-100 text-black rounded-lg px-3 py-1.5 text-sm sm:text-base font-medium focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
           >
-            <option>Year</option>
             {years.map((y) => (
-              <option key={y}>{y}</option>
+              <option key={y} value={y}>
+                {y}
+              </option>
             ))}
           </select>
         </div>
