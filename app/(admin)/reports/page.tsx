@@ -21,6 +21,12 @@ export default function ReportListPage() {
     "idle" | "loading" | "failed"
   >("idle");
   const [preMarketError, setPreMarketError] = useState<string | null>(null);
+  const [requestMatchStatus, setRequestMatchStatus] = useState<
+    "idle" | "loading" | "failed"
+  >("idle");
+  const [requestMatchError, setRequestMatchError] = useState<string | null>(
+    null,
+  );
   const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const downloadFile = (url: string) => {
@@ -66,7 +72,41 @@ export default function ReportListPage() {
     }
   };
 
+  const handleRequestMatchDownload = async () => {
+    try {
+      setRequestMatchStatus("loading");
+      setRequestMatchError(null);
+
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+
+      const response = await apiClient.get<PreMarketExcelResponse>(
+        "/pre-market/admin/excel-renter-listings",
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
+
+      const downloadUrl = response.data.data?.downloadUrl?.url;
+      if (!downloadUrl) {
+        throw new Error("Download URL not available.");
+      }
+
+      downloadFile(downloadUrl);
+      setRequestMatchStatus("idle");
+    } catch (err) {
+      setRequestMatchStatus("failed");
+      setRequestMatchError(
+        err instanceof Error ? err.message : "Unable to download report.",
+      );
+    }
+  };
+
   const isPreMarketBusy = preMarketStatus === "loading";
+  const isRequestMatchBusy = requestMatchStatus === "loading";
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
@@ -100,16 +140,21 @@ export default function ReportListPage() {
         </h1>
 
         <button
-          onClick={() =>
-            downloadFile(
-              "https://docs.google.com/spreadsheets/d/1qwL1tE6FyAodVJ74SfFStjp7D_CHNdzeU2peqyXRVec/export?format=xlsx"
-            )
-          }
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition mt-3 sm:mt-0"
+          onClick={handleRequestMatchDownload}
+          disabled={isRequestMatchBusy}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition mt-3 sm:mt-0 ${
+            isRequestMatchBusy
+              ? "bg-blue-300 text-white cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
         >
-          <Download size={16} /> Download Report
+          <Download size={16} />
+          {isRequestMatchBusy ? "Downloading..." : "Download Report"}
         </button>
       </div>
+      {requestMatchError ? (
+        <p className="text-sm text-red-600 mb-6">{requestMatchError}</p>
+      ) : null}
     </section>
   );
 }

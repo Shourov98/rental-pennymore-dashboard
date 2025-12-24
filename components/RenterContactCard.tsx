@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export interface RenterContactCardProps {
   renter: {
-    image: string;
+    image?: string;
     name: string;
     email: string;
     phone: string;
@@ -14,6 +14,7 @@ export interface RenterContactCardProps {
 }
 
 export default function RenterContactCard({ renter }: RenterContactCardProps) {
+  const initial = renter.name.trim().charAt(0).toUpperCase() || "?";
   const formatAgentName = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);
     const firstName = parts[0] ?? "";
@@ -34,13 +35,21 @@ export default function RenterContactCard({ renter }: RenterContactCardProps) {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row gap-10 items-center md:items-start">
       {/* Profile Image */}
-      <Image
-        src={renter.image}
-        alt="Renter"
-        width={160}
-        height={160}
-        className="rounded-full object-cover border-4 border-gray-100 shadow-sm"
-      />
+      <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-4 border-gray-100 shadow-sm">
+        {renter.image ? (
+          <Image
+            src={renter.image}
+            alt="Renter"
+            width={160}
+            height={160}
+            className="rounded-full object-cover w-full h-full"
+          />
+        ) : (
+          <span className="text-4xl font-semibold text-gray-500">
+            {initial}
+          </span>
+        )}
+      </div>
 
       {/* Contact Info */}
       <div className="flex-1 w-full">

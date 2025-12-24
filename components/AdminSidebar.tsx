@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   BarChart3,
@@ -16,6 +16,9 @@ import {
   LogOut,
   CircleQuestionMark,
 } from "lucide-react";
+import { apiClient } from "@/lib/apiClient";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { logout } from "@/store/auth/authSlice";
 
 export default function AdminSidebar({
   onItemClick,
@@ -23,6 +26,36 @@ export default function AdminSidebar({
   onItemClick?: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+
+  const handleLogout = async () => {
+    const tokenFromStorage =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
+    const token = accessToken || tokenFromStorage;
+
+    try {
+      await apiClient.post(
+        "/auth/logout",
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
+    } catch {
+      // Logout should still clear local state even if API fails.
+    } finally {
+      dispatch(logout());
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("profileSnapshot");
+      }
+      router.push("/signin");
+      onItemClick?.();
+    }
+  };
 
   const navLinks = [
     {
@@ -87,23 +120,35 @@ export default function AdminSidebar({
               const Icon = item.icon;
 
               return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={onItemClick}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition ${
-                    isActive
-                      ? "bg-blue-500 text-white border-blue-600"
-                      : "bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${
-                      isActive ? "text-white" : "text-gray-700"
+                item.label === "Logout" ? (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
+                  >
+                    <Icon className="w-4 h-4 text-gray-700" />
+                    {item.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={onItemClick}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition ${
+                      isActive
+                        ? "bg-blue-500 text-white border-blue-600"
+                        : "bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
                     }`}
-                  />
-                  {item.label}
-                </Link>
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${
+                        isActive ? "text-white" : "text-gray-700"
+                      }`}
+                    />
+                    {item.label}
+                  </Link>
+                )
               );
             })}
           </div>
