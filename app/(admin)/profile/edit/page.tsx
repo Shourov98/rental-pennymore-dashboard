@@ -9,8 +9,8 @@ import { useAppSelector } from "@/store/hooks";
 
 type ProfileData = {
   fullName?: string;
-  phoneNumber?: string;
-  profileImageUrl?: string | null;
+  phone?: string;
+  profileImage?: string | null;
 };
 
 type ProfileResponse = {
@@ -24,7 +24,7 @@ type UploadResponse = {
   success?: boolean;
   message?: string;
   data?: {
-    profileImageUrl?: string;
+    profileImage?: string;
     url?: string;
   };
 };
@@ -32,7 +32,7 @@ type UploadResponse = {
 export default function EditProfilePage() {
   const router = useRouter();
   const accessToken = useAppSelector((state) => state.auth.accessToken);
-  const [image, setImage] = useState("https://i.pravatar.cc/150?img=3");
+  const [image, setImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -42,6 +42,26 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     let isMounted = true;
+
+    if (typeof window !== "undefined") {
+      const cachedProfile = localStorage.getItem("profileSnapshot");
+      if (cachedProfile) {
+        try {
+          const parsed = JSON.parse(cachedProfile) as {
+            fullName?: string;
+            phone?: string;
+            profileImage?: string | null;
+          };
+          setFullName(parsed.fullName ?? "");
+          setPhoneNumber(parsed.phone ?? "");
+          if (parsed.profileImage) {
+            setImage(parsed.profileImage);
+          }
+        } catch {
+          localStorage.removeItem("profileSnapshot");
+        }
+      }
+    }
 
     const fetchProfile = async () => {
       try {
@@ -59,9 +79,9 @@ export default function EditProfilePage() {
 
         if (!isMounted) return;
         setFullName(response.data.data.fullName ?? "");
-        setPhoneNumber(response.data.data.phoneNumber ?? "");
-        if (response.data.data.profileImageUrl) {
-          setImage(response.data.data.profileImageUrl);
+        setPhoneNumber(response.data.data.phone ?? "");
+        if (response.data.data.profileImage) {
+          setImage(response.data.data.profileImage);
         }
         setStatus("idle");
       } catch (err) {
@@ -113,7 +133,7 @@ export default function EditProfilePage() {
           }
         );
         const uploadedUrl =
-          uploadResponse.data?.data?.profileImageUrl ??
+          uploadResponse.data?.data?.profileImage ??
           uploadResponse.data?.data?.url;
         if (uploadedUrl) {
           setImage(uploadedUrl);
@@ -179,14 +199,20 @@ export default function EditProfilePage() {
       <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col md:flex-row items-start gap-10">
         {/* Profile Image */}
         <div className="relative mx-auto md:mx-0">
-          <div className="w-40 h-40 rounded-full overflow-hidden">
-            <Image
-              src={image}
-              alt="Profile"
-              width={160}
-              height={160}
-              className="object-cover w-full h-full"
-            />
+          <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+            {image ? (
+              <Image
+                src={image}
+                alt="Profile"
+                width={160}
+                height={160}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="text-4xl font-semibold text-gray-500">
+                {(fullName ?? "").trim().charAt(0).toUpperCase() || "?"}
+              </span>
+            )}
           </div>
 
           {/* Upload Icon */}

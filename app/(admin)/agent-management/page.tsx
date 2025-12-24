@@ -16,7 +16,7 @@ type AgentUser = {
 
 type Agent = {
   _id: string;
-  userId: AgentUser;
+  userInfo: AgentUser;
   isActive: boolean;
   createdAt: string;
 };
@@ -133,8 +133,10 @@ export default function AgentManagement() {
         "/agent/admin/excel-download",
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
+        }
       );
+
+      console.log(response.data);
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
       if (!downloadUrl) {
@@ -146,7 +148,7 @@ export default function AgentManagement() {
     } catch (err) {
       setExportStatus("failed");
       setExportError(
-        err instanceof Error ? err.message : "Unable to export agents.",
+        err instanceof Error ? err.message : "Unable to export agents."
       );
     }
   };
@@ -245,15 +247,15 @@ export default function AgentManagement() {
                     </td>
 
                     <td className="py-3 px-6 text-sm whitespace-nowrap">
-                      {agent.userId?.fullName ?? "Unknown"}
+                      {agent.userInfo?.fullName ?? "Unknown"}
                     </td>
 
                     <td className="py-3 px-6 text-sm whitespace-nowrap">
-                      {agent.userId?.email ?? "Unknown"}
+                      {agent.userInfo?.email ?? "Unknown"}
                     </td>
 
                     <td className="py-3 px-6 text-sm whitespace-nowrap">
-                      {agent.userId?.phoneNumber ?? "Unknown"}
+                      {agent.userInfo?.phoneNumber ?? "Unknown"}
                     </td>
 
                     <td className="py-3 px-6 text-sm whitespace-nowrap">
@@ -282,7 +284,7 @@ export default function AgentManagement() {
 
                       <button
                         onClick={() =>
-                          router.push(`/agent-management/${agent.userId._id}`)
+                          router.push(`/agent-management/${agent.userInfo._id}`)
                         }
                         className="p-2 rounded-full hover:bg-gray-100 transition"
                       >

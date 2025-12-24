@@ -13,11 +13,12 @@ type AgentUser = {
   phoneNumber: string;
   fullName: string;
   accountStatus?: string;
+  profileImageUrl?: string;
 };
 
 type AgentDetail = {
   _id: string;
-  userId: AgentUser;
+  userInfo: AgentUser;
   licenseNumber: string;
   brokerageName: string;
   isActive: boolean;
@@ -51,7 +52,6 @@ export default function AgentDetailsPage() {
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [isToggling, setIsToggling] = useState(false);
   const [hasGrantAccess, setHasGrantAccess] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [isTogglingAccess, setIsTogglingAccess] = useState(false);
@@ -100,42 +100,14 @@ export default function AgentDetailsPage() {
   const contactCardAgent = useMemo(() => {
     if (!agent) return null;
     return {
-      name: agent.userId?.fullName ?? "Unknown",
-      email: agent.userId?.email ?? "Unknown",
-      phone: agent.userId?.phoneNumber ?? "Unknown",
+      name: agent.userInfo?.fullName ?? "Unknown",
+      email: agent.userInfo?.email ?? "Unknown",
+      phone: agent.userInfo?.phoneNumber ?? "Unknown",
       license: agent.licenseNumber ?? "N/A",
       brokerage: agent.brokerageName ?? "N/A",
-      image: "https://randomuser.me/api/portraits/men/31.jpg",
+      image: agent.userInfo?.profileImageUrl ?? undefined,
     };
   }, [agent]);
-
-  const handleToggleAccess = async () => {
-    if (!agent?.userId?._id) return;
-    try {
-      setIsToggling(true);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
-
-      const response = await apiClient.post<AgentDetailResponse>(
-        `/agent/admin/${agent.userId._id}/toggle-active`,
-        {},
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
-
-      setAgent(response.data.data ?? { ...agent, isActive: !agent.isActive });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to update agent status."
-      );
-    } finally {
-      setIsToggling(false);
-    }
-  };
 
   const handleToggleGrantAccess = async () => {
     if (!agent?._id) return;

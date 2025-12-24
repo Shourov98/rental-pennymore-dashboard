@@ -4,7 +4,7 @@ import Image from "next/image";
 
 interface AgentContactCardProps {
   agent: {
-    image: string;
+    image?: string;
     name: string;
     email: string;
     phone: string;
@@ -14,17 +14,26 @@ interface AgentContactCardProps {
 }
 
 export default function AgentContactCard({ agent }: AgentContactCardProps) {
+  const initial = agent.name.trim().charAt(0).toUpperCase() || "?";
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row gap-10 items-center md:items-start">
       {/* Profile Image */}
       <div className="shrink-0">
-        <Image
-          src={agent.image}
-          alt="Agent"
-          width={160}
-          height={160}
-          className="rounded-full object-cover border-4 border-gray-100 shadow-sm"
-        />
+        <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-4 border-gray-100 shadow-sm">
+          {agent.image ? (
+            <Image
+              src={agent.image}
+              alt="Agent"
+              width={160}
+              height={160}
+              className="rounded-full object-cover w-full h-full"
+            />
+          ) : (
+            <span className="text-4xl font-semibold text-gray-500">
+              {initial}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Contact Info */}
