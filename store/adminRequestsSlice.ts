@@ -15,6 +15,7 @@ export type AdminRequest = {
     fullName: string;
     email: string;
     phoneNumber: string;
+    profileImageUrl?: string;
     registrationType?: string;
     referralInfo?: {
       referrerId?: string;
@@ -47,6 +48,7 @@ export type AdminRequest = {
       email?: string;
       phoneNumber?: string;
       role?: string;
+      profileImageUrl?: string;
     };
     requestedAt?: string;
     payment?: {

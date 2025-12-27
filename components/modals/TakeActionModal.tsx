@@ -7,12 +7,14 @@ interface TakeActionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCharge: () => void;
+  onRemove: () => void;
 }
 
 export function TakeActionModal({
   isOpen,
   onClose,
   onCharge,
+  onRemove,
 }: TakeActionModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,7 @@ export function TakeActionModal({
         {/* Action Buttons */}
         <div className="flex items-center justify-center gap-4">
           <button
-            onClick={onClose}
+            onClick={onRemove}
             className="w-32 py-2 rounded-md bg-red-50 text-red-600 font-medium hover:bg-red-100 transition"
           >
             Remove

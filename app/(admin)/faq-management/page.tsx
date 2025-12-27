@@ -100,8 +100,6 @@ export default function FaqManagementPage() {
         isActive: true,
       };
 
-      console.log(payload);
-
       if (editId) {
         await apiClient.put(`/faq/admin/${editId}`, payload, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,

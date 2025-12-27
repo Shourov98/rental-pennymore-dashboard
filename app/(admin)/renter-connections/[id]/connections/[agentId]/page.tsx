@@ -1,50 +1,213 @@
 "use client";
 
-import Image from "next/image";
 import {
   ChevronLeft,
-  DollarSign,
-  X,
   CheckCircle,
   AlertCircle,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import RenterPreferenceForm from "@/components/RenterPreferenceForm";
 import AgentContactCard from "@/components/AgentContactCard";
+import RenterContactCard from "@/components/RenterContactCard";
+import { apiClient } from "@/lib/apiClient";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  setCurrentRequest,
+  type RenterRequestDetail,
+} from "@/store/renterConnectionSlice";
 
 export default function AgentConnectionViewPage() {
-  const [open, setOpen] = useState(true);
   const [openSection, setOpenSection] = useState<string | null>("renter");
-  // Dummy data
-  const connection = {
-    status: "Paid & Approved", // or "Pending"
-    agent: {
-      name: "John Doe",
-      email: "example@gmail.com",
-      phone: "+8801XXXXXXX",
-      license: "56666666",
-      brokerage: "Alice",
-      image: "https://randomuser.me/api/portraits/men/31.jpg",
+  const [request, setRequest] = useState<RenterRequestDetail | null>(null);
+  const [fetchStatus, setFetchStatus] = useState<
+    "idle" | "loading" | "succeeded" | "failed"
+  >("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+  const params = useParams<{ id: string; agentId: string }>();
+  const dispatch = useAppDispatch();
+  const { accessToken } = useAppSelector((state) => state.auth);
+  const currentRequest = useAppSelector(
+    (state) => state.renterConnection.currentRequest,
+  );
+
+  const requestId = useMemo(() => {
+    if (!params?.id) return "";
+    return Array.isArray(params.id) ? params.id[0] : params.id;
+  }, [params]);
+
+  const agentId = useMemo(() => {
+    if (!params?.agentId) return "";
+    return Array.isArray(params.agentId) ? params.agentId[0] : params.agentId;
+  }, [params]);
+
+  const useStoredRequest = Boolean(
+    currentRequest && currentRequest._id === requestId,
+  );
+  const activeRequest = useStoredRequest ? currentRequest : request;
+  const activeStatus = useStoredRequest ? "succeeded" : fetchStatus;
+
+  const loadRequest = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!requestId) return;
+      setFetchStatus("loading");
+      setError(null);
+
+      try {
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<{
+          data: RenterRequestDetail;
+        }>(`/pre-market/admin/requests/${requestId}`, {
+          signal,
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
+        });
+
+        setRequest(response.data.data);
+        dispatch(setCurrentRequest(response.data.data));
+        setFetchStatus("succeeded");
+      } catch (err) {
+        if (signal?.aborted) return;
+        setFetchStatus("failed");
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Failed to load agent connection.");
+        }
+      }
     },
-    renter: {
-      name: "John Doe",
-      email: "example@gmail.com",
-      phone: "+8801XXXXXXX",
-      image: "https://i.pravatar.cc/150?img=3",
-    },
-    payment: {
-      paid: true,
-      amount: 171.5,
-    },
+    [accessToken, dispatch, requestId],
+  );
+
+  useEffect(() => {
+    if (!requestId || useStoredRequest) return;
+
+    const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadRequest(controller.signal);
+    return () => controller.abort();
+  }, [loadRequest, requestId, useStoredRequest]);
+
+  const selectedAgentRequest = useMemo(() => {
+    if (!activeRequest?.agentRequests || !agentId) return null;
+    return (
+      activeRequest.agentRequests.find(
+        (agentRequest) =>
+          agentRequest.agent?.agentId === agentId ||
+          agentRequest.agentId === agentId ||
+          agentRequest._id === agentId,
+      ) ?? null
+    );
+  }, [agentId, activeRequest]);
+
+  const formatCurrency = (value?: number) => {
+    if (value === undefined || value === null) return "-";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(value);
   };
+
+  const formatDate = (value?: string) => {
+    if (!value) return "-";
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? "-" : parsed.toLocaleDateString();
+  };
+
+  const preferenceData = useMemo(() => {
+    const neighborhoods =
+      activeRequest?.locations?.flatMap((loc) => loc.neighborhoods || []) ?? [];
+
+    const unitFeatures: string[] = [];
+    if (activeRequest?.unitFeatures?.laundryInUnit) {
+      unitFeatures.push("Laundry in unit");
+    }
+    if (activeRequest?.unitFeatures?.privateOutdoorSpace) {
+      unitFeatures.push("Private outdoor space");
+    }
+    if (activeRequest?.unitFeatures?.dishwasher) {
+      unitFeatures.push("Dishwasher");
+    }
+
+    const buildingFeatures: string[] = [];
+    if (activeRequest?.buildingFeatures?.doorman) {
+      buildingFeatures.push("Doorman");
+    }
+    if (activeRequest?.buildingFeatures?.elevator) {
+      buildingFeatures.push("Elevator");
+    }
+    if (activeRequest?.buildingFeatures?.laundryInBuilding) {
+      buildingFeatures.push("Laundry in building");
+    }
+
+    const petPolicy: string[] = [];
+    if (activeRequest?.petPolicy?.catsAllowed) {
+      petPolicy.push("Cats allowed");
+    }
+    if (activeRequest?.petPolicy?.dogsAllowed) {
+      petPolicy.push("Dogs allowed");
+    }
+
+    const guarantor: string[] = [];
+    if (activeRequest?.guarantorRequired?.personalGuarantor) {
+      guarantor.push("Personal guarantor");
+    }
+    if (activeRequest?.guarantorRequired?.thirdPartyGuarantor) {
+      guarantor.push("Third party guarantor");
+    }
+
+    return {
+      borough: activeRequest?.locations?.[0]?.borough ?? "",
+      neighborhoods,
+      minPrice: formatCurrency(activeRequest?.priceRange?.min),
+      maxPrice: formatCurrency(activeRequest?.priceRange?.max),
+      earliestDate: formatDate(activeRequest?.movingDateRange?.earliest),
+      latestDate: formatDate(activeRequest?.movingDateRange?.latest),
+      bedrooms: activeRequest?.bedrooms?.[0] ?? "-",
+      bathrooms: activeRequest?.bathrooms?.[0] ?? "-",
+      unitFeatures,
+      buildingFeatures,
+      petPolicy,
+      guarantor,
+      preferences: activeRequest?.preferences ?? [],
+    };
+  }, [activeRequest]);
+
+  const paymentAmount = selectedAgentRequest?.payment?.amount ?? 0;
+  const paymentStatus = selectedAgentRequest?.payment?.status ?? "pending";
+  const isPaid = paymentStatus === "paid";
+  const agentStatus = selectedAgentRequest?.status ?? "pending";
+  const statusLabel =
+    agentStatus === "approved"
+      ? isPaid
+        ? "Paid & Approved"
+        : "Approved"
+      : "Pending";
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
       {/* Breadcrumb + Header */}
       <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-        <ChevronLeft size={18} className="cursor-pointer" />
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
+        >
+          <ChevronLeft size={18} />
+        </button>
         <span>Renter Connection</span>
         <span className="text-gray-400">›</span>
         <span>View</span>
@@ -54,71 +217,67 @@ export default function AgentConnectionViewPage() {
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <h1 className="text-2xl font-semibold text-[#0A093D]">
-          Renter Connection
+          {activeRequest?.requestName || "Renter Connection"}
         </h1>
 
-        {/* Status badge */}
         <span
           className={`mt-3 sm:mt-0 inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium ${
-            connection.status === "Paid & Approved"
+            statusLabel === "Paid & Approved"
               ? "bg-green-50 text-green-600"
-              : "bg-yellow-50 text-yellow-600"
+              : statusLabel === "Approved"
+                ? "bg-blue-50 text-blue-600"
+                : "bg-yellow-50 text-yellow-600"
           }`}
         >
-          {connection.status}
+          {statusLabel}
           <span
             className={`w-2 h-2 rounded-full ${
-              connection.status === "Paid & Approved"
+              statusLabel === "Paid & Approved"
                 ? "bg-green-500"
-                : "bg-yellow-500"
+                : statusLabel === "Approved"
+                  ? "bg-blue-500"
+                  : "bg-yellow-500"
             }`}
-          ></span>
+          />
         </span>
       </div>
 
-      {/* Agent Contact Details */}
-      <div className="pb-2 md:pb-3 lg:pb-5">
-        <AgentContactCard agent={connection.agent} />
-      </div>
+      {activeStatus === "loading" && (
+        <div className="mb-4 text-sm text-gray-600">Loading connection...</div>
+      )}
+      {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
 
-      {/* Renter Contact Details */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-[#0A093D]">
-            Renter Contact Details
-          </h2>
-          <span className="px-4 py-1 border border-blue-400 text-blue-500 rounded-full text-xs font-medium">
-            T. Mor
-          </span>
-        </div>
-
-        <div className="flex items-center gap-8">
-          <div className="w-28 h-28 rounded-full overflow-hidden">
-            <Image
-              src={connection.renter.image}
-              alt="Renter"
-              width={112}
-              height={112}
-              className="object-cover w-full h-full"
+      {activeRequest && (
+        <>
+          <div className="pb-2 md:pb-3 lg:pb-5">
+            <AgentContactCard
+              agent={{
+                name: selectedAgentRequest?.agent?.fullName ?? "Unknown agent",
+                email: selectedAgentRequest?.agent?.email ?? "N/A",
+                phone: selectedAgentRequest?.agent?.phoneNumber ?? "N/A",
+                license: "-",
+                brokerage: "-",
+                image: selectedAgentRequest?.agent?.profileImageUrl,
+              }}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-1 text-gray-800">
-            <div>
-              <p className="text-sm text-gray-500 mb-0.5">Name</p>
-              <p className="font-medium text-lg">{connection.renter.name}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-0.5">Email</p>
-              <p className="font-medium text-lg">{connection.renter.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-0.5">Phone Number</p>
-              <p className="font-medium text-lg">{connection.renter.phone}</p>
-            </div>
+          <div className="mb-6">
+            <RenterContactCard
+              renter={{
+                image: activeRequest.renterInfo?.profileImageUrl,
+                name: activeRequest.renterInfo?.fullName ?? "Unknown renter",
+                email: activeRequest.renterInfo?.email ?? "N/A",
+                phone: activeRequest.renterInfo?.phoneNumber ?? "N/A",
+                referrerName:
+                  activeRequest.renterInfo?.referralInfo?.referrerName,
+                referralType:
+                  activeRequest.renterInfo?.referralInfo?.referrerType,
+              }}
+            />
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Renter Preference Section */}
       <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden transition-all duration-300">
@@ -142,26 +301,10 @@ export default function AgentConnectionViewPage() {
         </div>
 
         {/* Dropdown content */}
-        {openSection === "renter" && (
+        {openSection === "renter" && activeRequest && (
           <div className="border-t border-gray-100 px-6 pb-6 pt-4 animate-fadeIn overflow-y-auto">
             <form className="grid grid-cols-1 gap-6 text-sm text-gray-700">
-              <RenterPreferenceForm
-                data={{
-                  borough: "Brooklyn",
-                  neighborhoods: ["West Chelsea"],
-                  minPrice: "4250",
-                  maxPrice: "5000",
-                  earliestDate: "05/21/2025",
-                  latestDate: "06/21/2025",
-                  bedrooms: "Studio",
-                  bathrooms: 1,
-                  unitFeatures: ["Laundry in unit", "Dishwasher"],
-                  buildingFeatures: ["Doorman", "Elevator"],
-                  petPolicy: ["Cats allowed"],
-                  guarantor: ["Personal guarantor"],
-                  note: "I want the room clean.",
-                }}
-              />
+              <RenterPreferenceForm data={preferenceData} />
             </form>
           </div>
         )}
@@ -189,18 +332,21 @@ export default function AgentConnectionViewPage() {
         <div className="border rounded-lg px-4 py-3 flex justify-between items-center">
           <div>
             <p className="text-gray-600 text-sm">
-              {connection.payment.paid ? "Paid" : "Pending"}
+              {isPaid ? "Paid" : "Pending"}
             </p>
             <p className="text-gray-500 text-sm">Amount</p>
           </div>
           <div className="flex items-center gap-2">
-            {connection.payment.paid ? (
+            {isPaid ? (
               <CheckCircle size={18} className="text-green-500" />
             ) : (
               <AlertCircle size={18} className="text-yellow-500" />
             )}
             <p className="font-semibold text-gray-800">
-              ${connection.payment.amount.toFixed(2)}
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(paymentAmount)}
             </p>
           </div>
         </div>

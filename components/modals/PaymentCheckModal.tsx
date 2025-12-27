@@ -54,6 +54,17 @@ export function PaymentCheckModal({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (selectedOption === "free") {
+      setNotes("Approved");
+      return;
+    }
+
+    if (selectedOption === "charge") {
+      setNotes("Standard fee");
+    }
+  }, [selectedOption]);
+
   if (!isOpen) return null;
 
   const handleSend = async () => {
@@ -89,7 +100,8 @@ export function PaymentCheckModal({
 
       const isFree = chargeAmount <= 0;
       const baseUrl = `/pre-market/grant-access/admin/${requestId}`;
-      const notesToSend = notes || "Approved";
+      const defaultNotes = isFree ? "Approved" : "Standard fee";
+      const notesToSend = notes || defaultNotes;
 
       const endpoint = isFree
         ? `${baseUrl}/approve/`

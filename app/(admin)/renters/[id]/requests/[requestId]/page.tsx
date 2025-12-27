@@ -97,7 +97,7 @@ export default function RequestDetailsPage() {
             buildingFeatures: ["Doorman", "Elevator"],
             petPolicy: ["Cats allowed"],
             guarantor: ["Personal guarantor"],
-            note: "I want the room clean.",
+            preferences: ["I want the room clean."],
           }}
         />
       </section>

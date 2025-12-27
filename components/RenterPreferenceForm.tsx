@@ -13,14 +13,46 @@ export default function RenterPreferenceForm({
     earliestDate: string;
     latestDate: string;
     bedrooms: string;
-    bathrooms: number;
+    bathrooms: string | number;
     unitFeatures: string[];
     buildingFeatures: string[];
     petPolicy: string[];
     guarantor: string[];
-    note: string;
+    preferences: string[];
   };
 }) {
+  const renderPreferencesList = (items: string[]) => {
+    if (!items.length) {
+      return <p className="text-sm text-gray-500">Not specified</p>;
+    }
+
+    const mid = Math.ceil(items.length / 2);
+    const left = items.slice(0, mid);
+    const right = items.slice(mid);
+
+    const renderColumn = (column: string[], offset: number) => (
+      <div className="space-y-2">
+        {column.map((item, idx) => (
+          <div
+            key={item}
+            className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2"
+          >
+            <span className="w-6 text-sm font-semibold text-gray-700">
+              {offset + idx + 1}.
+            </span>
+            <span className="text-sm text-gray-800">{item}</span>
+          </div>
+        ))}
+      </div>
+    );
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {renderColumn(left, 0)}
+        {renderColumn(right, left.length)}
+      </div>
+    );
+  };
   return (
     <>
       {/* Borough */}
@@ -141,7 +173,7 @@ export default function RenterPreferenceForm({
               <div
                 key={b}
                 className={`flex-1 border text-center py-2 text-sm rounded-sm ${
-                  data.bathrooms.toString() === b
+                  String(data.bathrooms) === b
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-gray-50 border-gray-200 text-gray-600"
                 }`}
@@ -225,12 +257,10 @@ export default function RenterPreferenceForm({
         ))}
       </div>
 
-      {/* Notes */}
+      {/* Preferences */}
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-1">Note</p>
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-800 min-h-[80px]">
-          {data.note}
-        </div>
+        <p className="text-sm font-medium text-gray-700 mb-2">Preferences</p>
+        {renderPreferencesList(data.preferences)}
       </div>
     </>
   );

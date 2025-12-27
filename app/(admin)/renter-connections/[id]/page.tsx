@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, Eye, DollarSign, Check, X } from "lucide-react";
 import { TakeActionModal } from "@/components/modals/TakeActionModal";
 import { PaymentCheckModal } from "@/components/modals/PaymentCheckModal";
+import { RejectRequestModal } from "@/components/modals/RejectRequestModal";
 import { useParams, useRouter } from "next/navigation";
 import RenterContactCard from "@/components/RenterContactCard";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
-import type { AdminRequest } from "@/store/adminRequestsSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { setCurrentRequest } from "@/store/renterConnectionSlice";
+import type { RenterRequestDetail } from "@/store/renterConnectionSlice";
 
 type AgentInfo = {
   agentId?: string;
@@ -31,34 +33,7 @@ type AgentRequest = {
   };
 };
 
-type AdminRequestDetail = AdminRequest & {
-  movingDateRange?: {
-    earliest?: string;
-    latest?: string;
-  };
-  unitFeatures?: {
-    laundryInUnit?: boolean;
-    privateOutdoorSpace?: boolean;
-    dishwasher?: boolean;
-  };
-  buildingFeatures?: {
-    doorman?: boolean;
-    elevator?: boolean;
-    laundryInBuilding?: boolean;
-  };
-  petPolicy?: {
-    catsAllowed?: boolean;
-    dogsAllowed?: boolean;
-  };
-  guarantorRequired?: {
-    personalGuarantor?: boolean;
-    thirdPartyGuarantor?: boolean;
-  };
-  preferences?: string[];
-  viewedBy?: {
-    grantAccessAgents?: string[];
-    normalAgents?: string[];
-  };
+type AdminRequestDetail = RenterRequestDetail & {
   agentRequests?: AgentRequest[];
 };
 
@@ -73,6 +48,7 @@ export default function RenterConnectionDetailsPage() {
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
   const [fetchStatus, setFetchStatus] = useState<
@@ -81,6 +57,7 @@ export default function RenterConnectionDetailsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { accessToken } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const router = useRouter();
   const params = useParams();
   const id = useMemo(() => {
@@ -114,6 +91,7 @@ export default function RenterConnectionDetailsPage() {
         );
 
         setRequest(response.data.data);
+        dispatch(setCurrentRequest(response.data.data));
         setFetchStatus("succeeded");
       } catch (err) {
         if (signal?.aborted) return;
@@ -125,7 +103,7 @@ export default function RenterConnectionDetailsPage() {
         }
       }
     },
-    [accessToken, id],
+    [accessToken, dispatch, id],
   );
 
   useEffect(() => {
@@ -144,7 +122,7 @@ export default function RenterConnectionDetailsPage() {
     );
   };
 
-  const renterImage = "https://randomuser.me/api/portraits/men/31.jpg";
+  const renterImage = request?.renterInfo?.profileImageUrl;
   const agentRequests = request?.agentRequests ?? [];
   const totalPages = 1;
 
@@ -300,7 +278,10 @@ export default function RenterConnectionDetailsPage() {
                                 </button>
                               )}
 
-                              <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition">
+                              <button
+                                onClick={() => setIsRejectModalOpen(true)}
+                                className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
+                              >
                                 <X size={16} className="text-red-500" />
                               </button>
                             </div>
@@ -363,6 +344,10 @@ export default function RenterConnectionDetailsPage() {
       <TakeActionModal
         isOpen={isActionModalOpen}
         onClose={() => setIsActionModalOpen(false)}
+        onRemove={() => {
+          setIsActionModalOpen(false);
+          setIsRejectModalOpen(true);
+        }}
         onCharge={() => {
           setIsActionModalOpen(false);
           setIsPaymentModalOpen(true);
@@ -372,6 +357,13 @@ export default function RenterConnectionDetailsPage() {
       <PaymentCheckModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
+        requestId={request?.requestId ?? id}
+        onSuccess={() => loadRequest()}
+      />
+
+      <RejectRequestModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
         requestId={request?.requestId ?? id}
         onSuccess={() => loadRequest()}
       />
