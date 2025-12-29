@@ -85,7 +85,7 @@ export default function NotificationsPage() {
         if (!isMounted) return;
         setStatus("failed");
         setError(
-          err instanceof Error ? err.message : "Unable to load notifications.",
+          err instanceof Error ? err.message : "Unable to load notifications."
         );
       }
     };
@@ -125,7 +125,7 @@ export default function NotificationsPage() {
     const listingTitle = notification.actionData?.listingTitle ?? "a listing";
 
     return `${renterName} posted "${listingTitle}" in ${uniqueBoroughs.join(
-      ", ",
+      ", "
     )}.`;
   };
 
@@ -138,29 +138,29 @@ export default function NotificationsPage() {
         {},
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
+        }
       );
 
       setNotifications((prev) =>
-        prev.map((notification) => ({ ...notification, isRead: true })),
+        prev.map((notification) => ({ ...notification, isRead: true }))
       );
       setUnreadCount(0);
       setActionStatus("idle");
     } catch (err) {
       setActionStatus("failed");
       setError(
-        err instanceof Error ? err.message : "Unable to mark all as read.",
+        err instanceof Error ? err.message : "Unable to mark all as read."
       );
     }
   };
 
   const handleMarkRead = async (notification: NotificationItem) => {
-    if (notification.isRead) {
-      if (notification.actionUrl) {
-        router.push(notification.actionUrl);
-      }
-      return;
-    }
+    // if (notification.isRead) {
+    //   if (notification.actionUrl) {
+    //     router.push(notification.actionUrl);
+    //   }
+    //   return;
+    // }
 
     try {
       setActionStatus("processing");
@@ -170,24 +170,24 @@ export default function NotificationsPage() {
         {},
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
+        }
       );
 
       setNotifications((prev) =>
         prev.map((item) =>
-          item._id === notification._id ? { ...item, isRead: true } : item,
-        ),
+          item._id === notification._id ? { ...item, isRead: true } : item
+        )
       );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
       setActionStatus("idle");
 
-      if (notification.actionUrl) {
-        router.push(notification.actionUrl);
-      }
+      // if (notification.actionUrl) {
+      //   router.push(notification.actionUrl);
+      // }
     } catch (err) {
       setActionStatus("failed");
       setError(
-        err instanceof Error ? err.message : "Unable to mark notification read.",
+        err instanceof Error ? err.message : "Unable to mark notification read."
       );
     }
   };
@@ -201,7 +201,7 @@ export default function NotificationsPage() {
       });
 
       setNotifications((prev) =>
-        prev.filter((item) => item._id !== notificationId),
+        prev.filter((item) => item._id !== notificationId)
       );
       setUnreadCount((prev) =>
         Math.max(
@@ -209,14 +209,14 @@ export default function NotificationsPage() {
             (notifications.find((item) => item._id === notificationId)?.isRead
               ? 0
               : 1),
-          0,
-        ),
+          0
+        )
       );
       setActionStatus("idle");
     } catch (err) {
       setActionStatus("failed");
       setError(
-        err instanceof Error ? err.message : "Unable to delete notification.",
+        err instanceof Error ? err.message : "Unable to delete notification."
       );
     }
   };

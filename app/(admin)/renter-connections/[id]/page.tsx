@@ -182,7 +182,7 @@ export default function RenterConnectionDetailsPage() {
 
           <div className="flex justify-between items-center mb-3 mt-6">
             <h2 className="text-lg font-semibold text-[#0A093D]">Agents</h2>
-            <button
+            {/* <button
               disabled={selectedAgents.length === 0}
               onClick={() => {
                 const selectedRequestId = getSelectedAgentRequestId();
@@ -197,7 +197,7 @@ export default function RenterConnectionDetailsPage() {
               }`}
             >
               Action
-            </button>
+            </button> */}
           </div>
 
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -205,13 +205,13 @@ export default function RenterConnectionDetailsPage() {
               <table className="min-w-full text-sm text-gray-800">
                 <thead className="bg-[#CFE4FF] text-[#0A093D] font-semibold">
                   <tr>
-                    <th className="px-4 py-3 text-left">
+                    {/* <th className="px-4 py-3 text-left">
                       <input
                         type="checkbox"
                         disabled
                         className="accent-blue-600"
                       />
-                    </th>
+                    </th> */}
                     <th className="px-4 py-3 text-left">No</th>
                     <th className="px-4 py-3 text-left">Agent Name</th>
                     <th className="px-4 py-3 text-left">Email</th>
@@ -250,7 +250,7 @@ export default function RenterConnectionDetailsPage() {
                           key={`agent-${agentId}`}
                           className="border-t border-gray-100 hover:bg-gray-50 transition"
                         >
-                          <td className="px-4 py-3">
+                          {/* <td className="px-4 py-3">
                             <label className="cursor-pointer flex items-center">
                               <input
                                 name={`agent-${agentId}`}
@@ -260,7 +260,7 @@ export default function RenterConnectionDetailsPage() {
                                 className="accent-blue-600 cursor-pointer"
                               />
                             </label>
-                          </td>
+                          </td> */}
                           <td className="px-4 py-3">
                             {String(idx + 1).padStart(2, "0")}
                           </td>
