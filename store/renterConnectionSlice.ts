@@ -38,7 +38,7 @@ export type RenterRequestDetail = {
     personalGuarantor?: boolean;
     thirdPartyGuarantor?: boolean;
   };
-  status?: string;
+  status?: "Available" | "pending" | "paid" | "free" | "rejected";
   isActive?: boolean;
   preferences?: string[];
   viewedBy?: {
@@ -82,7 +82,7 @@ export type RenterRequestDetail = {
     payment?: {
       amount?: number;
       currency?: string;
-      status?: string;
+      status?: "pending" | "paid" | "free";
     };
   }>;
 };

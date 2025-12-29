@@ -23,14 +23,21 @@ export default function RenterContactCard({ renter }: RenterContactCardProps) {
     return `${firstName[0]}. ${lastName}`;
   };
 
-  const referralLabel =
-    renter.referralType === "agent_referral"
-      ? renter.referrerName
-        ? formatAgentName(renter.referrerName)
-        : "None"
-      : renter.referralType === "admin_referral"
-        ? "Admin"
-        : "None";
+  const normalizedReferralType = renter.referralType?.toLowerCase();
+  const isAgentReferral =
+    normalizedReferralType === "agent_referral" ||
+    normalizedReferralType === "agent";
+  const isAdminReferral =
+    normalizedReferralType === "admin_referral" ||
+    normalizedReferralType === "admin";
+
+  const referralLabel = isAgentReferral
+    ? renter.referrerName
+      ? formatAgentName(renter.referrerName)
+      : "None"
+    : isAdminReferral
+      ? "Admin"
+      : "None";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row gap-10 items-center md:items-start">

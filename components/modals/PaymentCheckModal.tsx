@@ -88,6 +88,11 @@ export function PaymentCheckModal({
       return;
     }
 
+    if (selectedOption === "charge" && chargeAmount <= 0) {
+      setError("Charge amount must be greater than 0.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -98,26 +103,26 @@ export function PaymentCheckModal({
           : null;
       const token = accessToken || tokenFromStorage;
 
-      const isFree = chargeAmount <= 0;
+      const isFree = selectedOption === "free" || chargeAmount <= 0;
       const baseUrl = `/pre-market/grant-access/admin/${requestId}`;
       const defaultNotes = isFree ? "Approved" : "Standard fee";
       const notesToSend = notes || defaultNotes;
 
-      const endpoint = isFree
-        ? `${baseUrl}/approve/`
-        : `${baseUrl}/charge`;
+      const endpoint = isFree ? `${baseUrl}/approve` : `${baseUrl}/charge`;
 
       const payload = isFree
         ? { notes: notesToSend }
         : { chargeAmount, notes: notesToSend };
 
-      await apiClient.post(endpoint, payload, {
+      const res = await apiClient.post(endpoint, payload, {
         headers: token
           ? {
               Authorization: `Bearer ${token}`,
             }
           : undefined,
       });
+
+      console.log(res);
 
       onSuccess?.();
       onClose();

@@ -189,13 +189,18 @@ export default function AgentConnectionViewPage() {
   const paymentAmount = selectedAgentRequest?.payment?.amount ?? 0;
   const paymentStatus = selectedAgentRequest?.payment?.status ?? "pending";
   const isPaid = paymentStatus === "paid";
+  const isFree = paymentStatus === "free";
   const agentStatus = selectedAgentRequest?.status ?? "pending";
   const statusLabel =
-    agentStatus === "approved"
-      ? isPaid
-        ? "Paid & Approved"
-        : "Approved"
-      : "Pending";
+    agentStatus === "rejected"
+      ? "Rejected"
+      : isFree
+        ? "Free"
+        : isPaid
+          ? "Paid"
+          : agentStatus === "approved"
+            ? "Approved"
+            : "Pending";
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
@@ -222,21 +227,29 @@ export default function AgentConnectionViewPage() {
 
         <span
           className={`mt-3 sm:mt-0 inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium ${
-            statusLabel === "Paid & Approved"
+            statusLabel === "Paid"
               ? "bg-green-50 text-green-600"
               : statusLabel === "Approved"
                 ? "bg-blue-50 text-blue-600"
-                : "bg-yellow-50 text-yellow-600"
+                : statusLabel === "Rejected"
+                  ? "bg-red-50 text-red-600"
+                  : statusLabel === "Free"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-yellow-50 text-yellow-600"
           }`}
         >
           {statusLabel}
           <span
             className={`w-2 h-2 rounded-full ${
-              statusLabel === "Paid & Approved"
-                ? "bg-green-500"
-                : statusLabel === "Approved"
-                  ? "bg-blue-500"
-                  : "bg-yellow-500"
+            statusLabel === "Paid"
+              ? "bg-green-500"
+              : statusLabel === "Approved"
+                ? "bg-blue-500"
+                : statusLabel === "Rejected"
+                  ? "bg-red-500"
+                  : statusLabel === "Free"
+                    ? "bg-emerald-500"
+                    : "bg-yellow-500"
             }`}
           />
         </span>
@@ -332,12 +345,12 @@ export default function AgentConnectionViewPage() {
         <div className="border rounded-lg px-4 py-3 flex justify-between items-center">
           <div>
             <p className="text-gray-600 text-sm">
-              {isPaid ? "Paid" : "Pending"}
+              {isPaid ? "Paid" : isFree ? "Free" : "Pending"}
             </p>
             <p className="text-gray-500 text-sm">Amount</p>
           </div>
           <div className="flex items-center gap-2">
-            {isPaid ? (
+            {isPaid || isFree ? (
               <CheckCircle size={18} className="text-green-500" />
             ) : (
               <AlertCircle size={18} className="text-yellow-500" />

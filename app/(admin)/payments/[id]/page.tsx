@@ -1,32 +1,157 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Coins } from "lucide-react";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
 
-const renter = {
-  name: "John Doe",
-  email: "example@gmail.com",
-  phone: "+8801XXXXXXX",
-};
-
-const agent = {
-  name: "John Doe",
-  email: "example@gmail.com",
-  phone: "+8801XXXXXXX",
-  license: "56666666",
-  brokerage: "Alice",
+type PaymentDetailsResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    id: string;
+    paymentId?: string;
+    status?: string;
+    payment?: {
+      amount?: number;
+      currency?: string;
+      paymentStatus?: string;
+      stripePaymentIntentId?: string;
+      failureCount?: number;
+      failedAt?: string[];
+      succeededAt?: string | null;
+    };
+    adminDecision?: {
+      decidedBy?: string;
+      decidedAt?: string;
+      chargeAmount?: number;
+      isFree?: boolean;
+      notes?: string;
+    };
+    preMarketRequest?: {
+      id?: string;
+      requestId?: string;
+      requestName?: string;
+    };
+    agent?: {
+      userId?: string;
+      name?: string;
+      email?: string;
+      phone?: string;
+      brokerageName?: string;
+      licenseNumber?: string;
+      role?: string;
+    };
+    renter?: {
+      renterId?: string;
+      userId?: string;
+      name?: string;
+      email?: string;
+      phone?: string;
+      registrationType?: string;
+    };
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  timestamp: string;
 };
 
 export default function PaymentDetailsPage() {
   const router = useRouter();
+  const params = useParams();
+  const paymentId = useMemo(() => {
+    if (!params?.id) return "";
+    return Array.isArray(params.id) ? params.id[0] : params.id;
+  }, [params]);
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const [paymentData, setPaymentData] = useState<
+    PaymentDetailsResponse["data"] | null
+  >(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
 
-  const payment = {
-    status: "Paid", // change to "Pending" to test both designs
-    amount: "$171.50",
+  useEffect(() => {
+    if (!paymentId) return;
+    let isMounted = true;
+
+    const fetchPayment = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<PaymentDetailsResponse>(
+          `/grant-access/admin/payments/${paymentId}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          },
+        );
+
+        if (!isMounted) return;
+        setPaymentData(response.data.data);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(
+          err instanceof Error ? err.message : "Unable to load payment details.",
+        );
+      }
+    };
+
+    fetchPayment();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, paymentId]);
+
+  const displayStatus = useMemo(() => {
+    const rawStatus =
+      paymentData?.payment?.paymentStatus ||
+      paymentData?.status ||
+      "pending";
+    return rawStatus.toLowerCase() === "paid" ? "Paid" : "Pending";
+  }, [paymentData]);
+
+  const isPaid = displayStatus === "Paid";
+
+  const formatAmount = (amount?: number, currency?: string) => {
+    if (amount == null) return "-";
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currency || "USD",
+      }).format(amount);
+    } catch {
+      return `${currency || "USD"} ${amount}`;
+    }
   };
 
-  const isPaid = payment.status === "Paid";
+  const displayAmount = formatAmount(
+    paymentData?.payment?.amount ?? paymentData?.adminDecision?.chargeAmount,
+    paymentData?.payment?.currency,
+  );
+
+  const renter = {
+    name: paymentData?.renter?.name ?? "Unknown renter",
+    email: paymentData?.renter?.email ?? "N/A",
+    phone: paymentData?.renter?.phone ?? "N/A",
+  };
+
+  const agent = {
+    name: paymentData?.agent?.name ?? "Unknown agent",
+    email: paymentData?.agent?.email ?? "N/A",
+    phone: paymentData?.agent?.phone ?? "N/A",
+    license: paymentData?.agent?.licenseNumber ?? "N/A",
+    brokerage: paymentData?.agent?.brokerageName ?? "N/A",
+  };
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6 space-y-6">
@@ -60,14 +185,18 @@ export default function PaymentDetailsPage() {
           />
         </div>
       </div>
+      {status === "loading" && (
+        <p className="text-sm text-gray-600">Loading payment details...</p>
+      )}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       {/* Cost Section */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <p className="text-sm font-medium text-gray-700 mb-2">Cost</p>
         <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
           <div>
-            <p className="text-sm text-gray-600">{payment.status}</p>
-            <p className="font-semibold text-gray-900">{payment.amount}</p>
+            <p className="text-sm text-gray-600">{displayStatus}</p>
+            <p className="font-semibold text-gray-900">{displayAmount}</p>
           </div>
           <div
             className={`p-2 rounded-full ${
@@ -88,7 +217,7 @@ export default function PaymentDetailsPage() {
             Renter Contact Details
           </h2>
           <span className="border border-blue-400 text-blue-600 text-xs px-3 py-1 rounded-full font-medium">
-            Tuval’s Client
+            {paymentData?.preMarketRequest?.requestId ?? "Request"}
           </span>
         </div>
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">

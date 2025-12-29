@@ -9,7 +9,7 @@ export type AdminRequest = {
   requestId: string;
   requestName: string;
   createdAt: string;
-  status?: string;
+  status?: "Available" | "pending" | "paid" | "free" | "rejected";
   renterInfo?: {
     renterId: string;
     fullName: string;
@@ -40,7 +40,7 @@ export type AdminRequest = {
   };
   agentRequests?: Array<{
     _id: string;
-    status: string;
+    status: "pending" | "approved" | "rejected";
     agentId?: string;
     agent?: {
       agentId?: string;
@@ -54,7 +54,7 @@ export type AdminRequest = {
     payment?: {
       amount?: number;
       currency?: string;
-      status?: string;
+      status?: "pending" | "paid" | "free";
     };
   }>;
 };

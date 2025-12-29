@@ -49,7 +49,10 @@ export default function RenterConnectionDetailsPage() {
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [activeAgentRequestId, setActiveAgentRequestId] = useState<
+    string | null
+  >(null);
+  const [pageIndex, setPageIndex] = useState(1);
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
   const [fetchStatus, setFetchStatus] = useState<
     "idle" | "loading" | "succeeded" | "failed"
@@ -87,7 +90,7 @@ export default function RenterConnectionDetailsPage() {
                   Authorization: `Bearer ${token}`,
                 }
               : undefined,
-          },
+          }
         );
 
         setRequest(response.data.data);
@@ -103,7 +106,7 @@ export default function RenterConnectionDetailsPage() {
         }
       }
     },
-    [accessToken, dispatch, id],
+    [accessToken, dispatch, id]
   );
 
   useEffect(() => {
@@ -114,17 +117,26 @@ export default function RenterConnectionDetailsPage() {
     return () => controller.abort();
   }, [id, loadRequest]);
 
+  const renterImage = request?.renterInfo?.profileImageUrl;
+  const agentRequests = request?.agentRequests ?? [];
+  const totalPages = 1;
+
   const toggleSelection = (agentId: string) => {
     setSelectedAgents((prev) =>
       prev.includes(agentId)
         ? prev.filter((a) => a !== agentId)
-        : [...prev, agentId],
+        : [...prev, agentId]
     );
   };
 
-  const renterImage = request?.renterInfo?.profileImageUrl;
-  const agentRequests = request?.agentRequests ?? [];
-  const totalPages = 1;
+  const getSelectedAgentRequestId = useCallback(() => {
+    if (selectedAgents.length === 0) return null;
+    const selectedRequest = agentRequests.find((agentRequest) => {
+      const agentId = agentRequest.agent?.agentId || agentRequest.agentId;
+      return agentId ? selectedAgents.includes(agentId) : false;
+    });
+    return selectedRequest?._id ?? null;
+  }, [agentRequests, selectedAgents]);
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
@@ -172,7 +184,12 @@ export default function RenterConnectionDetailsPage() {
             <h2 className="text-lg font-semibold text-[#0A093D]">Agents</h2>
             <button
               disabled={selectedAgents.length === 0}
-              onClick={() => setIsActionModalOpen(true)}
+              onClick={() => {
+                const selectedRequestId = getSelectedAgentRequestId();
+                if (!selectedRequestId) return;
+                setActiveAgentRequestId(selectedRequestId);
+                setIsActionModalOpen(true);
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
                 selectedAgents.length === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
@@ -225,7 +242,8 @@ export default function RenterConnectionDetailsPage() {
                       const agentEmail = agentRequest.agent?.email || "N/A";
                       const agentPhone =
                         agentRequest.agent?.phoneNumber || "N/A";
-                      const adminApproved = agentRequest.status === "approved";
+                      const isPending = agentRequest.status === "pending";
+                      const isRejected = agentRequest.status === "rejected";
 
                       return (
                         <tr
@@ -254,7 +272,7 @@ export default function RenterConnectionDetailsPage() {
                               <button
                                 onClick={() =>
                                   router.push(
-                                    `/renter-connections/${id}/connections/${agentId}`,
+                                    `/renter-connections/${id}/connections/${agentId}`
                                   )
                                 }
                                 className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
@@ -262,13 +280,13 @@ export default function RenterConnectionDetailsPage() {
                                 <Eye size={16} className="text-gray-800" />
                               </button>
 
-                              {adminApproved ? (
-                                <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition">
-                                  <Check size={16} className="text-blue-600" />
-                                </button>
-                              ) : (
+                              {isPending ? (
                                 <button
-                                  onClick={() => setIsPaymentModalOpen(true)}
+                                  onClick={() => {
+                                    if (!agentRequest._id) return;
+                                    setActiveAgentRequestId(agentRequest._id);
+                                    setIsPaymentModalOpen(true);
+                                  }}
                                   className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
                                 >
                                   <DollarSign
@@ -276,14 +294,34 @@ export default function RenterConnectionDetailsPage() {
                                     className="text-blue-600"
                                   />
                                 </button>
+                              ) : (
+                                <button
+                                  className={`rounded-full p-2 transition ${
+                                    isRejected
+                                      ? "bg-red-600 hover:bg-red-700"
+                                      : "bg-green-600 hover:bg-green-700"
+                                  }`}
+                                >
+                                  {isRejected ? (
+                                    <X size={16} className="text-white" />
+                                  ) : (
+                                    <Check size={16} className="text-white" />
+                                  )}
+                                </button>
                               )}
 
-                              <button
-                                onClick={() => setIsRejectModalOpen(true)}
-                                className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
-                              >
-                                <X size={16} className="text-red-500" />
-                              </button>
+                              {isPending && (
+                                <button
+                                  onClick={() => {
+                                    if (!agentRequest._id) return;
+                                    setActiveAgentRequestId(agentRequest._id);
+                                    setIsRejectModalOpen(true);
+                                  }}
+                                  className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
+                                >
+                                  <X size={16} className="text-red-500" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -303,10 +341,10 @@ export default function RenterConnectionDetailsPage() {
 
       <div className="flex justify-center items-center gap-3 mt-6">
         <button
-          disabled={currentPage === 1 || totalPages === 1}
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          disabled={pageIndex === 1 || totalPages === 1}
+          onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
           className={`flex items-center justify-center w-8 h-8 rounded-full border ${
-            currentPage === 1 || totalPages === 1
+            pageIndex === 1 || totalPages === 1
               ? "text-gray-400 border-gray-200 cursor-not-allowed"
               : "hover:bg-gray-100"
           }`}
@@ -317,9 +355,9 @@ export default function RenterConnectionDetailsPage() {
         {[...Array(totalPages)].map((_, i) => (
           <button
             key={i}
-            onClick={() => setCurrentPage(i + 1)}
+            onClick={() => setPageIndex(i + 1)}
             className={`w-8 h-8 flex items-center justify-center border rounded-md text-sm font-medium ${
-              currentPage === i + 1
+              pageIndex === i + 1
                 ? "bg-white border-blue-500 text-blue-600"
                 : "border-gray-200 hover:bg-gray-100 text-gray-700"
             }`}
@@ -329,10 +367,10 @@ export default function RenterConnectionDetailsPage() {
         ))}
 
         <button
-          disabled={currentPage === totalPages || totalPages === 1}
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          disabled={pageIndex === totalPages || totalPages === 1}
+          onClick={() => setPageIndex((p) => Math.min(totalPages, p + 1))}
           className={`flex items-center justify-center w-8 h-8 rounded-full border ${
-            currentPage === totalPages || totalPages === 1
+            pageIndex === totalPages || totalPages === 1
               ? "text-gray-400 border-gray-200 cursor-not-allowed"
               : "hover:bg-gray-100"
           }`}
@@ -345,26 +383,38 @@ export default function RenterConnectionDetailsPage() {
         isOpen={isActionModalOpen}
         onClose={() => setIsActionModalOpen(false)}
         onRemove={() => {
+          const selectedRequestId = getSelectedAgentRequestId();
+          if (!selectedRequestId) return;
+          setActiveAgentRequestId(selectedRequestId);
           setIsActionModalOpen(false);
           setIsRejectModalOpen(true);
         }}
         onCharge={() => {
+          const selectedRequestId = getSelectedAgentRequestId();
+          if (!selectedRequestId) return;
+          setActiveAgentRequestId(selectedRequestId);
           setIsActionModalOpen(false);
           setIsPaymentModalOpen(true);
         }}
       />
 
       <PaymentCheckModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        requestId={request?.requestId ?? id}
+        isOpen={isPaymentModalOpen && Boolean(activeAgentRequestId)}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setActiveAgentRequestId(null);
+        }}
+        requestId={activeAgentRequestId ?? ""}
         onSuccess={() => loadRequest()}
       />
 
       <RejectRequestModal
-        isOpen={isRejectModalOpen}
-        onClose={() => setIsRejectModalOpen(false)}
-        requestId={request?.requestId ?? id}
+        isOpen={isRejectModalOpen && Boolean(activeAgentRequestId)}
+        onClose={() => {
+          setIsRejectModalOpen(false);
+          setActiveAgentRequestId(null);
+        }}
+        requestId={activeAgentRequestId ?? ""}
         onSuccess={() => loadRequest()}
       />
     </section>

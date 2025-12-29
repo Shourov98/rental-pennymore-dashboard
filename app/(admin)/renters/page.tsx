@@ -273,11 +273,15 @@ export default function RenterManagement() {
                       </td>
 
                       <td className="py-3 px-6 text-sm whitespace-nowrap">
-                        <span className="inline-flex items-center rounded-full border border-blue-500 text-blue-600 px-2.5 py-0.5 text-xs font-semibold">
-                          {referralType === "agent_referral" && referralName
-                            ? formatReferralName(referralName)
-                            : referralName}
-                        </span>
+                        {referralName === "None" ? (
+                          <span className="text-gray-400">None</span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-blue-500 text-blue-600 px-2.5 py-0.5 text-xs font-semibold">
+                            {referralType === "agent_referral" && referralName
+                              ? formatReferralName(referralName)
+                              : referralName}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3 px-6 whitespace-nowrap">
