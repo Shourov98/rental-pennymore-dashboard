@@ -59,6 +59,8 @@ export default function AgentManagement() {
     "idle" | "loading" | "failed"
   >("idle");
   const [exportError, setExportError] = useState<string | null>(null);
+  const [toggleId, setToggleId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -72,12 +74,49 @@ export default function AgentManagement() {
   };
 
   // Toggle access
-  const toggleAccess = (id: string) => {
+  const toggleAccess = async (
+    agentId: string,
+    userId: string,
+    currentStatus: boolean
+  ) => {
+    setToggleError(null);
+    setToggleId(agentId);
     setAgents((prev) =>
       prev.map((agent) =>
-        agent._id === id ? { ...agent, isActive: !agent.isActive } : agent
+        agent._id === agentId
+          ? { ...agent, isActive: !agent.isActive }
+          : agent
       )
     );
+
+    try {
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+
+      await apiClient.post(
+        `/agent/admin/${userId}/toggle-active`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+    } catch (err) {
+      setAgents((prev) =>
+        prev.map((agent) =>
+          agent._id === agentId
+            ? { ...agent, isActive: currentStatus }
+            : agent
+        )
+      );
+      setToggleError(
+        err instanceof Error ? err.message : "Unable to toggle agent status."
+      );
+    } finally {
+      setToggleId(null);
+    }
   };
 
   useEffect(() => {
@@ -198,6 +237,9 @@ export default function AgentManagement() {
       {exportError ? (
         <p className="text-sm text-red-600">{exportError}</p>
       ) : null}
+      {toggleError ? (
+        <p className="text-sm text-red-600">{toggleError}</p>
+      ) : null}
 
       {/* TABLE WRAPPER — scrollable container */}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -272,11 +314,22 @@ export default function AgentManagement() {
 
                     <td className="py-3 px-6 flex items-center gap-3 whitespace-nowrap">
                       <button
-                        onClick={() => toggleAccess(agent._id)}
+                        onClick={() =>
+                          toggleAccess(
+                            agent._id,
+                            agent.userInfo._id,
+                            agent.isActive
+                          )
+                        }
+                        disabled={toggleId === agent._id}
                         className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
                           agent.isActive
                             ? "bg-red-500 hover:bg-red-600 text-white"
                             : "bg-green-500 hover:bg-green-600 text-white"
+                        } ${
+                          toggleId === agent._id
+                            ? "opacity-60 cursor-not-allowed"
+                            : ""
                         }`}
                       >
                         {agent.isActive ? "Deactivate" : "Activate"}
