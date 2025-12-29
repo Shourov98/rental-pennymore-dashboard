@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { Suspense, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,7 +12,7 @@ import {
 } from "@/store/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
-export default function OtpVerifyPage() {
+function OtpVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
@@ -167,5 +167,13 @@ export default function OtpVerifyPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function OtpVerifyPage() {
+  return (
+    <Suspense fallback={<div className="w-full" />}>
+      <OtpVerifyContent />
+    </Suspense>
   );
 }
