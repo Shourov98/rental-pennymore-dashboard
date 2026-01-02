@@ -77,7 +77,7 @@ export default function RenterDetailsPage() {
           `/renter/admin/renters/${renterId}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
+          }
         );
 
         if (!isMounted) return;
@@ -87,7 +87,7 @@ export default function RenterDetailsPage() {
         if (!isMounted) return;
         setStatus("failed");
         setError(
-          err instanceof Error ? err.message : "Unable to load renter details.",
+          err instanceof Error ? err.message : "Unable to load renter details."
         );
       }
     };
@@ -111,12 +111,12 @@ export default function RenterDetailsPage() {
   };
 
   const mapLocations = (listing?: Listing) => {
-    const location = listing?.locations?.[0];
-    if (!location) return { borough: "-", neighborhood: "-" };
-    return {
+    const locations = listing?.locations ?? [];
+    if (locations.length === 0) return [];
+    return locations.map((location) => ({
       borough: location.borough ?? "-",
-      neighborhood: location.neighborhoods?.[0] ?? "-",
-    };
+      neighborhoods: location.neighborhoods?.join(", ") ?? "-",
+    }));
   };
 
   const mapPrice = (listing?: Listing) => {
@@ -170,22 +170,22 @@ export default function RenterDetailsPage() {
           {/* REQUEST CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {(renter.preMarketListings ?? []).map((listing) => {
-              const { borough, neighborhood } = mapLocations(listing);
+              const locationEntries = mapLocations(listing);
               return (
                 <RequestCard
                   key={listing._id}
                   requestName={listing.requestName}
-                  borough={borough}
-                  neighborhood={neighborhood}
+                  locationEntries={locationEntries}
                   dateRange={mapDateRange(listing)}
-                  price={mapPrice(listing)}
-                  beds={0}
-                  baths={0}
+                  priceRange={mapPrice(listing)}
+                  bedsLabel="0 Beds"
+                  bathsLabel="0 Bath"
                   status={listing.status === "active" ? "active" : "deactive"}
+                  isActive={listing.isActive}
                   disableActivate={listing.status !== "active"}
                   onToggleStatus={() => null}
                   onView={() =>
-                    router.push(`/renters/${renterId}/requests/${listing.requestId}`)
+                    router.push(`/renters/${renterId}/requests/${listing._id}`)
                   }
                 />
               );

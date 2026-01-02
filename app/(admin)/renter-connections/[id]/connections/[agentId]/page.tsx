@@ -130,6 +130,11 @@ export default function AgentConnectionViewPage() {
   const preferenceData = useMemo(() => {
     const neighborhoods =
       activeRequest?.locations?.flatMap((loc) => loc.neighborhoods || []) ?? [];
+    const locations =
+      activeRequest?.locations?.map((loc) => ({
+        borough: loc.borough ?? "-",
+        neighborhoods: loc.neighborhoods ?? [],
+      })) ?? [];
 
     const unitFeatures: string[] = [];
     if (activeRequest?.unitFeatures?.laundryInUnit) {
@@ -170,6 +175,7 @@ export default function AgentConnectionViewPage() {
     }
 
     return {
+      locations,
       borough: activeRequest?.locations?.[0]?.borough ?? "",
       neighborhoods,
       minPrice: formatCurrency(activeRequest?.priceRange?.min),

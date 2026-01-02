@@ -6,14 +6,16 @@ export default function RenterPreferenceForm({
   data,
 }: {
   data: {
-    borough: string;
+    borough?: string;
+    boroughs?: string[];
+    locations?: { borough: string; neighborhoods: string[] }[];
     neighborhoods: string[];
     minPrice: string;
     maxPrice: string;
     earliestDate: string;
     latestDate: string;
-    bedrooms: string;
-    bathrooms: string | number;
+    bedrooms: string | string[];
+    bathrooms: string | number | string[];
     unitFeatures: string[];
     buildingFeatures: string[];
     petPolicy: string[];
@@ -21,6 +23,29 @@ export default function RenterPreferenceForm({
     preferences: string[];
   };
 }) {
+  const locationGroups =
+    data.locations?.length
+      ? data.locations
+      : data.borough || data.boroughs?.length || data.neighborhoods?.length
+        ? [
+            {
+              borough: data.boroughs?.length
+                ? data.boroughs.join(", ")
+                : data.borough ?? "Borough",
+              neighborhoods: data.neighborhoods ?? [],
+            },
+          ]
+        : [];
+  const bedroomList = Array.isArray(data.bedrooms)
+    ? data.bedrooms
+    : data.bedrooms
+      ? [data.bedrooms]
+      : [];
+  const bathroomList = Array.isArray(data.bathrooms)
+    ? data.bathrooms.map(String)
+    : data.bathrooms != null
+      ? [String(data.bathrooms)]
+      : [];
   const renderPreferencesList = (items: string[]) => {
     if (!items.length) {
       return <p className="text-sm text-gray-500">Not specified</p>;
@@ -57,58 +82,47 @@ export default function RenterPreferenceForm({
     <>
       {/* Borough */}
       <div className="mb-4">
-        <p className="text-sm font-semibold text-gray-700 mb-1">Borough</p>
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="radio"
-              checked={(data.borough ?? "") === "Manhattan"}
-              readOnly
-              className="accent-blue-600"
-            />
-            Manhattan
-          </label>
-
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="radio"
-              checked={(data.borough ?? "") === "Brooklyn"}
-              readOnly
-              className="accent-blue-600"
-            />
-            Brooklyn
-          </label>
-        </div>
-      </div>
-
-      {/* Neighborhoods */}
-      <div className="flex flex-col mb-4">
-        <label className="text-sm font-medium text-gray-700 mb-1">
-          Neighborhoods
-        </label>
-
-        <div className="flex flex-wrap gap-2">
-          {data.neighborhoods?.map((hood: string) => (
-            <span
-              key={hood}
-              className="bg-gray-100 border border-gray-300 text-gray-800 rounded-md px-3 py-1 text-sm"
-            >
-              {hood}
-            </span>
-          ))}
+        <p className="text-sm font-semibold text-gray-700 mb-1">
+          Borough & Neighborhoods
+        </p>
+        <div className="space-y-3">
+          {locationGroups.length ? (
+            locationGroups.map((location) => (
+              <div key={location.borough}>
+                <div className="text-lg font-semibold text-gray-900">
+                  {location.borough}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {location.neighborhoods?.length
+                    ? location.neighborhoods.join(" • ")
+                    : "Not specified"}
+                </div>
+              </div>
+            ))
+          ) : (
+            <span className="text-sm text-gray-500">Not specified</span>
+          )}
         </div>
       </div>
 
       {/* Price */}
-      <div className="flex max-w-[200px] flex-col mb-4">
+      <div className="flex flex-col mb-4">
         <label className="text-sm font-medium text-gray-700 mb-1">
-          Max Pre-Market Price
+          Pre-Market Price Range
         </label>
-
-        <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-          <DollarSign width={16} height={16} className="text-blue-600 mr-2" />
-
-          <span className="text-sm text-gray-800">{data.maxPrice}</span>
+        <div className="flex flex-wrap gap-3">
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+            <DollarSign width={16} height={16} className="text-blue-600 mr-2" />
+            <span className="text-sm text-gray-800">
+              {data.minPrice || "-"}
+            </span>
+          </div>
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+            <DollarSign width={16} height={16} className="text-blue-600 mr-2" />
+            <span className="text-sm text-gray-800">
+              {data.maxPrice || "-"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -155,7 +169,7 @@ export default function RenterPreferenceForm({
               <div
                 key={br}
                 className={`flex-1 border text-center py-2 text-sm rounded-sm ${
-                  data.bedrooms === br
+                  bedroomList.includes(br)
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-gray-50 border-gray-200 text-gray-600"
                 }`}
@@ -173,7 +187,7 @@ export default function RenterPreferenceForm({
               <div
                 key={b}
                 className={`flex-1 border text-center py-2 text-sm rounded-sm ${
-                  String(data.bathrooms) === b
+                  bathroomList.includes(b)
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-gray-50 border-gray-200 text-gray-600"
                 }`}

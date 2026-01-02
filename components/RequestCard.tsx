@@ -2,13 +2,13 @@ import { CalendarDays, BedDouble, Bath } from "lucide-react";
 
 interface RequestCardProps {
   requestName: string;
-  borough: string;
-  neighborhood: string;
+  locationEntries?: { borough: string; neighborhoods: string }[];
   dateRange: string;
-  price: string;
-  beds: number;
-  baths: number;
+  priceRange: string;
+  bedsLabel: string;
+  bathsLabel: string;
   status: "active" | "deactive";
+  isActive: boolean;
   disableActivate?: boolean;
   onView: () => void;
   onToggleStatus: () => void;
@@ -16,19 +16,16 @@ interface RequestCardProps {
 
 export default function RequestCard({
   requestName,
-  borough,
-  neighborhood,
+  locationEntries = [],
   dateRange,
-  price,
-  beds,
-  baths,
-  status,
+  priceRange,
+  bedsLabel,
+  bathsLabel,
+  isActive,
   disableActivate = false,
   onView,
   onToggleStatus,
 }: RequestCardProps) {
-  const isActive = status === "active";
-
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col justify-between transition hover:shadow-md hover:-translate-y-1 duration-200">
       {/* Request Name + Status */}
@@ -45,15 +42,21 @@ export default function RequestCard({
       </div>
 
       {/* Borough + Neighborhood */}
-      <div className="mt-1">
-        <p className="text-gray-500 text-sm">Borough</p>
-        <p className="font-medium text-gray-900">{borough}</p>
+      {locationEntries.length > 0 && (
+        <div className="mt-1 flex flex-col gap-2">
+          {locationEntries.map((loc, index) => (
+            <div
+              key={`${loc.borough}-${index}`}
+              className="flex flex-col leading-snug"
+            >
+              <span className="font-semibold text-gray-900">{loc.borough}</span>
+              <span className="text-gray-600">{loc.neighborhoods}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
-        <p className="text-gray-500 text-sm mt-2">Neighborhood</p>
-        <p className="font-medium text-gray-900">{neighborhood}</p>
-      </div>
-
-      {/* Dates */}
+      {/* Date */}
       <div className="flex items-center gap-2 text-gray-500 text-sm mt-4">
         <CalendarDays className="w-4 h-4" />
         <span>{dateRange}</span>
@@ -61,22 +64,22 @@ export default function RequestCard({
 
       {/* Price */}
       <div className="mt-4">
-        <p className="text-gray-500 text-sm">Min</p>
-        <p className="text-xl font-bold text-[#0B0B2C]">{price}</p>
+        <p className="text-gray-500 text-sm">Price Range</p>
+        <p className="text-xl font-bold text-[#0B0B2C]">{priceRange}</p>
       </div>
 
-      {/* Beds / Baths */}
+      {/* Beds & Baths */}
       <div className="flex items-center gap-3 mt-3 text-gray-600 text-sm">
         <div className="flex items-center gap-1">
           <BedDouble className="w-4 h-4 text-gray-500" />
-          <span>{beds} Beds</span>
+          <span>{bedsLabel}</span>
         </div>
 
         <span className="text-gray-300">|</span>
 
         <div className="flex items-center gap-1">
           <Bath className="w-4 h-4 text-gray-500" />
-          <span>{baths} Bath</span>
+          <span>{bathsLabel}</span>
         </div>
       </div>
 

@@ -1,106 +1,218 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { MapPin, DollarSign, Calendar } from "lucide-react";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import RenterPreferenceForm from "@/components/RenterPreferenceForm";
 import RenterContactCard from "@/components/RenterContactCard";
+import { apiClient } from "@/lib/apiClient";
+import { useAppSelector } from "@/store/hooks";
 
-// Reusable read-only info box
-function InfoBox({
-  icon: Icon,
-  value,
-  placeholder,
-}: {
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  value: string;
-  placeholder: string;
-}) {
-  return (
-    <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 flex-1 cursor-not-allowed">
-      {Icon && (
-        <Icon width={16} height={16} className="text-blue-600 mr-2 shrink-0" />
-      )}
-      <span className="text-sm text-gray-800">{value || placeholder}</span>
-    </div>
-  );
-}
+type RequestDetails = {
+  _id: string;
+  requestId: string;
+  requestName: string;
+  movingDateRange?: {
+    earliest?: string;
+    latest?: string;
+  };
+  priceRange?: {
+    min?: number;
+    max?: number;
+  };
+  locations?: Array<{
+    borough?: string;
+    neighborhoods?: string[];
+  }>;
+  bedrooms?: string[];
+  bathrooms?: string[];
+  unitFeatures?: {
+    laundryInUnit?: boolean;
+    privateOutdoorSpace?: boolean;
+    dishwasher?: boolean;
+  };
+  buildingFeatures?: {
+    doorman?: boolean;
+    elevator?: boolean;
+    laundryInBuilding?: boolean;
+  };
+  petPolicy?: {
+    catsAllowed?: boolean;
+    dogsAllowed?: boolean;
+  };
+  guarantorRequired?: {
+    personalGuarantor?: boolean;
+    thirdPartyGuarantor?: boolean;
+  };
+  preferences?: string[];
+  renterInfo?: {
+    renterId?: string;
+    fullName?: string;
+    email?: string;
+    phoneNumber?: string;
+    profileImageUrl?: string | null;
+    registrationType?: string;
+  };
+};
+
+type RequestDetailsResponse = {
+  success: boolean;
+  message: string;
+  data: RequestDetails;
+  timestamp: string;
+};
 
 export default function RequestDetailsPage() {
   const { requestId } = useParams<{ requestId: string }>();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
+  const [request, setRequest] = useState<RequestDetails | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [error, setError] = useState<string | null>(null);
 
-  // ---- Request data should come from API later ----
-  // (for now using mock sample)
-  const renter = {
-    firstName: "John",
-    lastName: "Doe",
-    email: "example@gmail.com",
-    phone: "+8801XXXXXXX",
-    image: "https://randomuser.me/api/portraits/men/31.jpg",
-    referrerName: "Tuval Mor",
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  const request = {
-    id: requestId,
-    requestName: "BeforeListed-1",
-    borough: "Manhattan",
-    neighborhoods: ["West Chelsea", "Hudson Yards"], // ⬅ MULTIPLE support
-    price: "$4,250.00",
-    dateRange: "5/21/25 - 6/21/25",
-    bedrooms: "2BR",
-    bathrooms: "1",
-    unitFeatures: ["Laundry in unit", "Dishwasher"],
-    buildingFeatures: ["Doorman", "Elevator"],
-    petPolicy: ["Cats allowed"],
-    guarantor: ["Personal guarantor"],
-    note: "I want the room clean.",
-  };
+    const fetchRequestDetails = async () => {
+      try {
+        setStatus("loading");
+        setError(null);
+        const tokenFromStorage =
+          typeof window !== "undefined"
+            ? localStorage.getItem("accessToken")
+            : null;
+        const token = accessToken || tokenFromStorage;
+
+        const response = await apiClient.get<RequestDetailsResponse>(
+          `/pre-market/admin/requests/${requestId}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          },
+        );
+
+        if (!isMounted) return;
+        setRequest(response.data.data);
+        setStatus("idle");
+      } catch (err) {
+        if (!isMounted) return;
+        setStatus("failed");
+        setError(
+          err instanceof Error ? err.message : "Unable to load request details.",
+        );
+      }
+    };
+
+    if (requestId) {
+      fetchRequestDetails();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, requestId]);
+
+  const renter = request?.renterInfo;
+  const renterName = renter?.fullName ?? "-";
+  const renterFirstName =
+    renterName.split(/\s+/).filter(Boolean)[0] ?? renterName;
+
+  const formattedRequestData = useMemo(() => {
+    const locations = request?.locations ?? [];
+    const boroughs = locations
+      .map((location) => location.borough)
+      .filter((borough): borough is string => Boolean(borough));
+    const neighborhoods = locations.flatMap(
+      (location) => location.neighborhoods ?? [],
+    );
+
+    const formatPrice = (value?: number) =>
+      value != null ? `$${value.toLocaleString()}` : "-";
+
+    const formatDate = (value?: string) =>
+      value ? new Date(value).toLocaleDateString() : "-";
+
+    const unitFeatures: string[] = [];
+    if (request?.unitFeatures?.laundryInUnit) unitFeatures.push("Laundry in unit");
+    if (request?.unitFeatures?.privateOutdoorSpace)
+      unitFeatures.push("Private outdoor space");
+    if (request?.unitFeatures?.dishwasher) unitFeatures.push("Dishwasher");
+
+    const buildingFeatures: string[] = [];
+    if (request?.buildingFeatures?.doorman) buildingFeatures.push("Doorman");
+    if (request?.buildingFeatures?.elevator) buildingFeatures.push("Elevator");
+    if (request?.buildingFeatures?.laundryInBuilding)
+      buildingFeatures.push("Laundry in building");
+
+    const petPolicy: string[] = [];
+    if (request?.petPolicy?.catsAllowed) petPolicy.push("Cats allowed");
+    if (request?.petPolicy?.dogsAllowed) petPolicy.push("Dogs allowed");
+
+    const guarantor: string[] = [];
+    if (request?.guarantorRequired?.personalGuarantor)
+      guarantor.push("Personal guarantor");
+    if (request?.guarantorRequired?.thirdPartyGuarantor)
+      guarantor.push("Third party guarantor");
+
+    return {
+      locations: locations.map((location) => ({
+        borough: location.borough ?? "-",
+        neighborhoods: location.neighborhoods ?? [],
+      })),
+      boroughs,
+      neighborhoods,
+      minPrice: formatPrice(request?.priceRange?.min),
+      maxPrice: formatPrice(request?.priceRange?.max),
+      earliestDate: formatDate(request?.movingDateRange?.earliest),
+      latestDate: formatDate(request?.movingDateRange?.latest),
+      bedrooms: request?.bedrooms ?? [],
+      bathrooms: request?.bathrooms ?? [],
+      unitFeatures,
+      buildingFeatures,
+      petPolicy,
+      guarantor,
+      preferences: request?.preferences ?? [],
+    };
+  }, [request]);
 
   return (
     <div className="space-y-4">
-      {/* Contact */}
-      <RenterContactCard
-        renter={{
-          ...renter,
-          name: `${renter.firstName} ${renter.lastName}`,
-        }}
-      />
-      <section className="w-full bg-white rounded-xl shadow-sm p-6 sm:p-8 md:p-10">
-        {/* ------------------------------------------------ */}
-        {/* HEADER AREA WITH REQUEST NAME + RENTER FIRST NAME */}
-        {/* ------------------------------------------------ */}
-        <div className="mb-8 flex flex-col gap-1">
-          <div className="flex flex-col items-left justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {request.requestName}
-            </h1>
-            <span className="text-md font-semibold text-gray-700 py-1.5 rounded-lg">
-              Renter: {renter.firstName}
-            </span>
-          </div>
-
-          <p className="text-sm text-gray-500">
-            Review renter’s pre-market request information
-          </p>
+      {status === "loading" ? (
+        <div className="bg-white rounded-2xl shadow-sm p-6 text-sm text-gray-500">
+          Loading request details...
         </div>
-        <RenterPreferenceForm
-          data={{
-            borough: "Brooklyn",
-            neighborhoods: ["West Chelsea"],
-            minPrice: "4250",
-            maxPrice: "5000",
-            earliestDate: "05/21/2025",
-            latestDate: "06/21/2025",
-            bedrooms: "Studio",
-            bathrooms: 1,
-            unitFeatures: ["Laundry in unit", "Dishwasher"],
-            buildingFeatures: ["Doorman", "Elevator"],
-            petPolicy: ["Cats allowed"],
-            guarantor: ["Personal guarantor"],
-            preferences: ["I want the room clean."],
-          }}
-        />
-      </section>
+      ) : error ? (
+        <div className="bg-white rounded-2xl shadow-sm p-6 text-sm text-red-600">
+          {error}
+        </div>
+      ) : request ? (
+        <>
+          {/* Contact */}
+          <RenterContactCard
+            renter={{
+              name: renterName,
+              email: renter?.email ?? "-",
+              phone: renter?.phoneNumber ?? "-",
+              image: renter?.profileImageUrl ?? undefined,
+              referralType: renter?.registrationType ?? "normal",
+            }}
+          />
+          <section className="w-full bg-white rounded-xl shadow-sm p-6 sm:p-8 md:p-10">
+            <div className="mb-8 flex flex-col gap-1">
+              <div className="flex flex-col items-left justify-between">
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  {request.requestName ?? "-"}
+                </h1>
+                <span className="text-md font-semibold text-gray-700 py-1.5 rounded-lg">
+                  Renter: {renterFirstName}
+                </span>
+              </div>
+
+              <p className="text-sm text-gray-500">
+                Review renter’s pre-market request information
+              </p>
+            </div>
+            <RenterPreferenceForm data={formattedRequestData} />
+          </section>
+        </>
+      ) : null}
     </div>
   );
 }
