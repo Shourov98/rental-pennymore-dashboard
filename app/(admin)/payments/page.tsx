@@ -58,9 +58,8 @@ export default function PaymentListPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState<PaymentsResponse["pagination"]>(
-    undefined,
-  );
+  const [pagination, setPagination] =
+    useState<PaymentsResponse["pagination"]>(undefined);
   const limit = 10;
 
   const handleDelete = (id: string) => {
@@ -68,9 +67,13 @@ export default function PaymentListPage() {
   };
 
   const formatStatus = (payment: PaymentItem) => {
-    const rawStatus = payment.paymentStatus ?? payment.status ?? "pending";
-    const normalized = rawStatus.toLowerCase();
-    return normalized === "paid" ? "Paid" : "Pending";
+    const rawPayment = payment.paymentStatus ?? "succeeded";
+    const rawStatus = payment.status ?? "paid";
+    const normalizedStatus = rawStatus.toLowerCase();
+    const normalizedPayment = rawPayment.toLowerCase();
+    return normalizedPayment === "succeeded" && normalizedStatus === "paid"
+      ? "Paid"
+      : "Pending";
   };
 
   const getStatusBadge = (payment: PaymentItem) => {
@@ -132,7 +135,7 @@ export default function PaymentListPage() {
           {
             params: { page, limit },
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
+          }
         );
 
         if (!isMounted) return;
@@ -143,7 +146,7 @@ export default function PaymentListPage() {
         if (!isMounted) return;
         setStatus("failed");
         setError(
-          err instanceof Error ? err.message : "Unable to load payments.",
+          err instanceof Error ? err.message : "Unable to load payments."
         );
       }
     };
