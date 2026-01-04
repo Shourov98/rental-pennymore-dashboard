@@ -22,6 +22,8 @@ type Listing = {
     borough?: string;
     neighborhoods?: string[];
   }>;
+  bedrooms?: string[];
+  bathrooms?: string[];
   movingDateRange?: {
     earliest?: string;
     latest?: string;
@@ -178,8 +180,8 @@ export default function RenterDetailsPage() {
                   locationEntries={locationEntries}
                   dateRange={mapDateRange(listing)}
                   priceRange={mapPrice(listing)}
-                  bedsLabel="0 Beds"
-                  bathsLabel="0 Bath"
+                  bedrooms={listing.bedrooms}
+                  bathrooms={listing.bathrooms}
                   status={listing.status === "active" ? "active" : "deactive"}
                   isActive={listing.isActive}
                   disableActivate={listing.status !== "active"}

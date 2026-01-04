@@ -5,8 +5,8 @@ interface RequestCardProps {
   locationEntries?: { borough: string; neighborhoods: string }[];
   dateRange: string;
   priceRange: string;
-  bedsLabel: string;
-  bathsLabel: string;
+  bedrooms?: string[];
+  bathrooms?: string[];
   status: "active" | "deactive";
   isActive: boolean;
   disableActivate?: boolean;
@@ -19,13 +19,19 @@ export default function RequestCard({
   locationEntries = [],
   dateRange,
   priceRange,
-  bedsLabel,
-  bathsLabel,
+  bedrooms,
+  bathrooms,
   isActive,
   disableActivate = false,
   onView,
   onToggleStatus,
 }: RequestCardProps) {
+  const formatValues = (values?: string[]) =>
+    values && values.length > 0 ? values.join(", ") : "-";
+
+  const bedsLabel = formatValues(bedrooms);
+  const bathsLabel = formatValues(bathrooms);
+
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col justify-between transition hover:shadow-md hover:-translate-y-1 duration-200">
       {/* Request Name + Status */}
