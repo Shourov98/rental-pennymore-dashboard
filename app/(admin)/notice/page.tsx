@@ -84,7 +84,7 @@ export default function NoticePage() {
         { content: text.trim() },
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
+        }
       );
 
       setText(response.data.data.content ?? text.trim());
@@ -135,16 +135,14 @@ export default function NoticePage() {
       {/* Input Section */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-base font-semibold text-gray-800 mb-3">
-          Newyork City Vacancy Rate
+          Headline text:
         </h2>
 
         {status === "loading" ? (
           <p className="text-sm text-gray-500 mb-3">Loading notice...</p>
         ) : null}
 
-        {error ? (
-          <p className="text-sm text-red-600 mb-3">{error}</p>
-        ) : null}
+        {error ? <p className="text-sm text-red-600 mb-3">{error}</p> : null}
 
         {saveStatus === "succeeded" ? (
           <p className="text-sm text-green-600 mb-3">

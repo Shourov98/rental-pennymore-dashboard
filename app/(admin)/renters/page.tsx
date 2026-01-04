@@ -136,7 +136,7 @@ export default function RenterManagement() {
         "/renter/admin/excel-download",
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
+        }
       );
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
@@ -149,7 +149,7 @@ export default function RenterManagement() {
     } catch (err) {
       setExportStatus("failed");
       setExportError(
-        err instanceof Error ? err.message : "Unable to export renters.",
+        err instanceof Error ? err.message : "Unable to export renters."
       );
     }
   };
@@ -212,7 +212,7 @@ export default function RenterManagement() {
           <table className="min-w-max w-full border-collapse">
             <thead className="bg-blue-200 text-[#0B0B2C]">
               <tr>
-                {["No", "Name", "Email", "Phone", "Referaal", "Actions"].map(
+                {["No", "Name", "Email", "Phone", "Referral", "Actions"].map(
                   (h) => (
                     <th
                       key={h}
@@ -248,8 +248,8 @@ export default function RenterManagement() {
                     referralType === "agent_referral"
                       ? renter.referralInfo?.referredByAgent?.referrerName
                       : referralType === "admin_referral"
-                        ? "Admin"
-                        : "None";
+                      ? "Admin"
+                      : "Tuval Mor";
 
                   return (
                     <tr

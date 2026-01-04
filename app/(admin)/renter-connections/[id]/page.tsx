@@ -7,6 +7,7 @@ import { PaymentCheckModal } from "@/components/modals/PaymentCheckModal";
 import { RejectRequestModal } from "@/components/modals/RejectRequestModal";
 import { useParams, useRouter } from "next/navigation";
 import RenterContactCard from "@/components/RenterContactCard";
+import RenterPreferenceForm from "@/components/RenterPreferenceForm";
 import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setCurrentRequest } from "@/store/renterConnectionSlice";
@@ -52,6 +53,7 @@ export default function RenterConnectionDetailsPage() {
   const [activeAgentRequestId, setActiveAgentRequestId] = useState<
     string | null
   >(null);
+  const [isPreferenceOpen, setIsPreferenceOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
   const [request, setRequest] = useState<AdminRequestDetail | null>(null);
   const [fetchStatus, setFetchStatus] = useState<
@@ -120,6 +122,75 @@ export default function RenterConnectionDetailsPage() {
   const renterImage = request?.renterInfo?.profileImageUrl;
   const agentRequests = request?.agentRequests ?? [];
   const totalPages = 1;
+  const formattedRequestData = useMemo(() => {
+    const locations = request?.locations ?? [];
+    const boroughs = locations
+      .map((location) => location.borough)
+      .filter((borough): borough is string => Boolean(borough));
+    const neighborhoods = locations.flatMap(
+      (location) => location.neighborhoods ?? []
+    );
+
+    const formatPrice = (value?: number) =>
+      value != null ? `$${value.toLocaleString()}` : "-";
+
+    const formatDate = (value?: string) =>
+      value ? new Date(value).toLocaleDateString() : "-";
+
+    const unitFeatures: string[] = [];
+    if (request?.unitFeatures?.laundryInUnit) {
+      unitFeatures.push("Laundry in unit");
+    }
+    if (request?.unitFeatures?.privateOutdoorSpace) {
+      unitFeatures.push("Private outdoor space");
+    }
+    if (request?.unitFeatures?.dishwasher) {
+      unitFeatures.push("Dishwasher");
+    }
+
+    const buildingFeatures: string[] = [];
+    if (request?.buildingFeatures?.doorman) {
+      buildingFeatures.push("Doorman");
+    }
+    if (request?.buildingFeatures?.elevator) {
+      buildingFeatures.push("Elevator");
+    }
+    if (request?.buildingFeatures?.laundryInBuilding) {
+      buildingFeatures.push("Laundry in building");
+    }
+
+    const petPolicy: string[] = [];
+    if (request?.petPolicy?.catsAllowed) petPolicy.push("Cats allowed");
+    if (request?.petPolicy?.dogsAllowed) petPolicy.push("Dogs allowed");
+
+    const guarantor: string[] = [];
+    if (request?.guarantorRequired?.personalGuarantor) {
+      guarantor.push("Personal guarantor");
+    }
+    if (request?.guarantorRequired?.thirdPartyGuarantor) {
+      guarantor.push("Third party guarantor");
+    }
+
+    return {
+      locations: locations.map((location) => ({
+        borough: location.borough ?? "-",
+        neighborhoods: location.neighborhoods ?? [],
+      })),
+      boroughs,
+      neighborhoods,
+      minPrice: formatPrice(request?.priceRange?.min),
+      maxPrice: formatPrice(request?.priceRange?.max),
+      earliestDate: formatDate(request?.movingDateRange?.earliest),
+      latestDate: formatDate(request?.movingDateRange?.latest),
+      bedrooms: request?.bedrooms ?? [],
+      bathrooms: request?.bathrooms ?? [],
+      unitFeatures,
+      buildingFeatures,
+      petPolicy,
+      guarantor,
+      preferences: request?.preferences ?? [],
+    };
+  }, [request]);
 
   const toggleSelection = (agentId: string) => {
     setSelectedAgents((prev) =>
@@ -179,6 +250,31 @@ export default function RenterConnectionDetailsPage() {
               referrerName: request.renterInfo?.referralInfo?.referrerName,
             }}
           />
+
+          <section className="w-full bg-white rounded-xl shadow-sm mt-6 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsPreferenceOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between p-6 sm:p-8 md:p-10 text-left"
+            >
+              <div className="flex flex-col gap-1">
+                <h2 className="text-lg font-semibold text-[#0A093D]">
+                  Renter Preference
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Review renter’s pre-market request information
+                </p>
+              </div>
+              <span className="text-blue-600 text-lg font-medium">
+                {isPreferenceOpen ? "−" : "+"}
+              </span>
+            </button>
+            {isPreferenceOpen && (
+              <div className="border-t border-gray-100 px-6 pb-6 sm:px-8 md:px-10">
+                <RenterPreferenceForm data={formattedRequestData} />
+              </div>
+            )}
+          </section>
 
           <div className="flex justify-between items-center mb-3 mt-6">
             <h2 className="text-lg font-semibold text-[#0A093D]">Agents</h2>

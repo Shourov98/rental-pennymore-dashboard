@@ -25,7 +25,7 @@ export default function ReportListPage() {
     "idle" | "loading" | "failed"
   >("idle");
   const [requestMatchError, setRequestMatchError] = useState<string | null>(
-    null,
+    null
   );
   const accessToken = useAppSelector((state) => state.auth.accessToken);
 
@@ -54,7 +54,7 @@ export default function ReportListPage() {
         "/pre-market/admin/excel-download",
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
+        }
       );
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
@@ -67,7 +67,7 @@ export default function ReportListPage() {
     } catch (err) {
       setPreMarketStatus("failed");
       setPreMarketError(
-        err instanceof Error ? err.message : "Unable to download report.",
+        err instanceof Error ? err.message : "Unable to download report."
       );
     }
   };
@@ -87,7 +87,7 @@ export default function ReportListPage() {
         "/pre-market/admin/excel-renter-listings",
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
+        }
       );
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
@@ -100,7 +100,7 @@ export default function ReportListPage() {
     } catch (err) {
       setRequestMatchStatus("failed");
       setRequestMatchError(
-        err instanceof Error ? err.message : "Unable to download report.",
+        err instanceof Error ? err.message : "Unable to download report."
       );
     }
   };
@@ -113,7 +113,7 @@ export default function ReportListPage() {
       {/* Renter Request Report */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-white p-6 rounded-xl shadow-sm">
         <h1 className="text-2xl font-semibold text-[#0A093D]">
-          Renter Request Report
+          All Renter Requests Report
         </h1>
 
         <button
@@ -136,7 +136,7 @@ export default function ReportListPage() {
       {/* Request Matches Report */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-white p-6 rounded-xl shadow-sm">
         <h1 className="text-2xl font-semibold text-[#0A093D]">
-          Request Matches Report
+          Agent Request Engagement Report
         </h1>
 
         <button
