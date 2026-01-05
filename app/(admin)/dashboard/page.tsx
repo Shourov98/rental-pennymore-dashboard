@@ -22,25 +22,23 @@ type MonthlyIncomeResponse = {
 export default function AdminDashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
   const { user, accessToken } = useAppSelector(selectAuth);
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return String(now.getMonth() + 1);
+  });
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const now = new Date();
+    return String(now.getFullYear());
+  });
   const [incomeStatus, setIncomeStatus] = useState<
     "idle" | "loading" | "failed"
   >("idle");
   const [incomeError, setIncomeError] = useState<string | null>(null);
-  const [monthlyIncome, setMonthlyIncome] =
-    useState<MonthlyIncomeResponse["data"] | null>(null);
+  const [monthlyIncome, setMonthlyIncome] = useState<
+    MonthlyIncomeResponse["data"] | null
+  >(null);
 
-  const referralLink =
-    user?.referralLink ??
-    "https://premarket-platform.com/referral/special-link-2025";
-
-  // Initialize date values
-  useEffect(() => {
-    const now = new Date();
-    setSelectedMonth(String(now.getMonth() + 1));
-    setSelectedYear(String(now.getFullYear()));
-  }, []);
+  const referralLink = user?.referralLink ?? "";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -67,7 +65,7 @@ export default function AdminDashboard() {
           `/grant-access/admin/income/monthly/${selectedYear}/${selectedMonth}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
+          }
         );
 
         if (!isMounted) return;
@@ -77,7 +75,7 @@ export default function AdminDashboard() {
         if (!isMounted) return;
         setIncomeStatus("failed");
         setIncomeError(
-          err instanceof Error ? err.message : "Unable to load income data.",
+          err instanceof Error ? err.message : "Unable to load income data."
         );
       }
     };
@@ -112,7 +110,9 @@ export default function AdminDashboard() {
     <div className="space-y-6 sm:space-y-8">
       {/* Title */}
       <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#0B0B2C]">Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#0B0B2C]">
+          Dashboard
+        </h1>
       </div>
 
       {/* Special Link Section */}
@@ -120,7 +120,9 @@ export default function AdminDashboard() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
             <p className="font-semibold text-[#0B0B2C] text-sm">Special Link</p>
-            <p className="text-gray-500 text-sm">This link is for special customers</p>
+            <p className="text-gray-500 text-sm">
+              This link is for special customers
+            </p>
           </div>
 
           <button

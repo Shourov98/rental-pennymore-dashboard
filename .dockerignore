@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+Dockerfile
+README.md
+npm-debug.log
+pnpm-debug.log
+*.tsbuildinfo
+*.log
+
+# Editor/OS junk
+.DS_Store
+Thumbs.db

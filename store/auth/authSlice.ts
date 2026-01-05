@@ -99,10 +99,26 @@ type AuthState = {
   refreshError: string | null;
 };
 
+const readStoredUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("user");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
+};
+
+const readStoredToken = (key: "accessToken" | "refreshToken") => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(key);
+};
+
 const initialState: AuthState = {
-  user: null,
-  accessToken: null,
-  refreshToken: null,
+  user: readStoredUser(),
+  accessToken: readStoredToken("accessToken"),
+  refreshToken: readStoredToken("refreshToken"),
   status: "idle",
   error: null,
   mustChangePassword: false,
@@ -136,6 +152,7 @@ export const login = createAsyncThunk<
       if (response.data.data.refreshToken) {
         localStorage.setItem("refreshToken", response.data.data.refreshToken);
       }
+      localStorage.setItem("user", JSON.stringify(response.data.data.user));
     }
 
     return response.data.data;
@@ -309,6 +326,7 @@ const authSlice = createSlice({
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
       }
     },
     setToken(state, action: PayloadAction<string | null>) {
