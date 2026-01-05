@@ -124,11 +124,11 @@ export const login = createAsyncThunk<
   LoginResponse["data"],
   LoginRequest,
   { rejectValue: string }
->("auth/login", async (credentials, { rejectWithValue }) => {
+>("auth/admin/login", async (credentials, { rejectWithValue }) => {
   try {
     const response = await apiClient.post<LoginResponse>(
-      "/auth/login",
-      credentials,
+      "/auth/admin/login",
+      credentials
     );
 
     if (typeof window !== "undefined") {
@@ -156,7 +156,7 @@ export const forgotPassword = createAsyncThunk<
   try {
     const response = await apiClient.post<ForgotPasswordResponse>(
       "/auth/forgot-password",
-      { email },
+      { email }
     );
 
     return { email, message: response.data.message };
@@ -177,7 +177,7 @@ export const verifyPasswordOtp = createAsyncThunk<
   try {
     const response = await apiClient.post<VerifyPasswordOtpResponse>(
       "/auth/verify-password-otp",
-      { email, otp },
+      { email, otp }
     );
 
     return { email, otp, message: response.data.message };
@@ -198,7 +198,7 @@ export const resendPasswordOtp = createAsyncThunk<
   try {
     const response = await apiClient.post<ResendPasswordOtpResponse>(
       "/auth/resend-password-otp",
-      { email },
+      { email }
     );
 
     return { email, message: response.data.message };
@@ -215,22 +215,25 @@ export const resetPassword = createAsyncThunk<
   { email: string; message: string },
   ResetPasswordRequest,
   { rejectValue: string }
->("auth/resetPassword", async ({ email, otp, newPassword }, { rejectWithValue }) => {
-  try {
-    const response = await apiClient.post<ResetPasswordResponse>(
-      "/auth/reset-password",
-      { email, otp, newPassword },
-    );
+>(
+  "auth/resetPassword",
+  async ({ email, otp, newPassword }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.post<ResetPasswordResponse>(
+        "/auth/reset-password",
+        { email, otp, newPassword }
+      );
 
-    return { email, message: response.data.message };
-  } catch (error) {
-    if (error instanceof Error) {
-      return rejectWithValue(error.message);
+      return { email, message: response.data.message };
+    } catch (error) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message);
+      }
+
+      return rejectWithValue("Unable to reset password. Please try again.");
     }
-
-    return rejectWithValue("Unable to reset password. Please try again.");
   }
-});
+);
 
 type RefreshTokenResponse = {
   success: boolean;
@@ -262,7 +265,7 @@ export const refreshAccessToken = createAsyncThunk<
 
     const response = await apiClient.post<RefreshTokenResponse>(
       "/auth/refresh-token",
-      { refreshToken },
+      { refreshToken }
     );
 
     if (typeof window !== "undefined") {
@@ -316,7 +319,7 @@ const authSlice = createSlice({
       action: PayloadAction<{
         accessToken: string | null;
         refreshToken: string | null;
-      }>,
+      }>
     ) {
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
