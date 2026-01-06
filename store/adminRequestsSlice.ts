@@ -35,7 +35,7 @@ export type AdminRequest = {
   bathrooms?: string[];
   agentRequestSummary?: {
     total?: number;
-    approved?: number;
+    approve?: number;
     pending?: number;
   };
   agentRequests?: Array<{
@@ -99,7 +99,8 @@ export const fetchAdminRequests = createAsyncThunk<
   { rejectValue: string; state: RootState }
 >("adminRequests/fetch", async (params, { rejectWithValue, getState }) => {
   try {
-    const tokenFromState = getState().auth.accessToken;
+    const state = getState() as RootState;
+    const tokenFromState = state.auth.accessToken;
     const tokenFromStorage =
       typeof window !== "undefined"
         ? localStorage.getItem("accessToken")
@@ -118,7 +119,7 @@ export const fetchAdminRequests = createAsyncThunk<
               Authorization: `Bearer ${accessToken}`,
             }
           : undefined,
-      },
+      }
     );
 
     return response.data;

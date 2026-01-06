@@ -14,6 +14,7 @@ import AgentContactCard from "@/components/AgentContactCard";
 import RenterContactCard from "@/components/RenterContactCard";
 import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { selectAuth } from "@/store/auth/authSlice";
 import {
   setCurrentRequest,
   type RenterRequestDetail,
@@ -30,9 +31,9 @@ export default function AgentConnectionViewPage() {
   const router = useRouter();
   const params = useParams<{ id: string; agentId: string }>();
   const dispatch = useAppDispatch();
-  const { accessToken } = useAppSelector((state) => state.auth);
+  const { accessToken } = useAppSelector(selectAuth);
   const currentRequest = useAppSelector(
-    (state) => state.renterConnection.currentRequest,
+    (state) => state.renterConnection.currentRequest
   );
 
   const requestId = useMemo(() => {
@@ -46,7 +47,7 @@ export default function AgentConnectionViewPage() {
   }, [params]);
 
   const useStoredRequest = Boolean(
-    currentRequest && currentRequest._id === requestId,
+    currentRequest && currentRequest._id === requestId
   );
   const activeRequest = useStoredRequest ? currentRequest : request;
   const activeStatus = useStoredRequest ? "succeeded" : fetchStatus;
@@ -88,7 +89,7 @@ export default function AgentConnectionViewPage() {
         }
       }
     },
-    [accessToken, dispatch, requestId],
+    [accessToken, dispatch, requestId]
   );
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function AgentConnectionViewPage() {
         (agentRequest) =>
           agentRequest.agent?.agentId === agentId ||
           agentRequest.agentId === agentId ||
-          agentRequest._id === agentId,
+          agentRequest._id === agentId
       ) ?? null
     );
   }, [agentId, activeRequest]);
@@ -193,7 +194,7 @@ export default function AgentConnectionViewPage() {
   }, [activeRequest]);
 
   const paymentAmount = selectedAgentRequest?.payment?.amount ?? 0;
-  const paymentStatus = selectedAgentRequest?.payment?.status ?? "pending";
+  const paymentStatus = selectedAgentRequest?.status ?? "pending";
   const isPaid = paymentStatus === "paid";
   const isFree = paymentStatus === "free";
   const agentStatus = selectedAgentRequest?.status ?? "pending";
@@ -201,12 +202,12 @@ export default function AgentConnectionViewPage() {
     agentStatus === "rejected"
       ? "Rejected"
       : isFree
-        ? "Free"
-        : isPaid
-          ? "Paid"
-          : agentStatus === "approved"
-            ? "Approved"
-            : "Pending";
+      ? "Free"
+      : isPaid
+      ? "Paid"
+      : agentStatus === "approved"
+      ? "Approved"
+      : "Pending";
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
@@ -236,26 +237,26 @@ export default function AgentConnectionViewPage() {
             statusLabel === "Paid"
               ? "bg-green-50 text-green-600"
               : statusLabel === "Approved"
-                ? "bg-blue-50 text-blue-600"
-                : statusLabel === "Rejected"
-                  ? "bg-red-50 text-red-600"
-                  : statusLabel === "Free"
-                    ? "bg-emerald-50 text-emerald-600"
-                    : "bg-yellow-50 text-yellow-600"
+              ? "bg-blue-50 text-blue-600"
+              : statusLabel === "Rejected"
+              ? "bg-red-50 text-red-600"
+              : statusLabel === "Free"
+              ? "bg-emerald-50 text-emerald-600"
+              : "bg-yellow-50 text-yellow-600"
           }`}
         >
           {statusLabel}
           <span
             className={`w-2 h-2 rounded-full ${
-            statusLabel === "Paid"
-              ? "bg-green-500"
-              : statusLabel === "Approved"
+              statusLabel === "Paid"
+                ? "bg-green-500"
+                : statusLabel === "Approved"
                 ? "bg-blue-500"
                 : statusLabel === "Rejected"
-                  ? "bg-red-500"
-                  : statusLabel === "Free"
-                    ? "bg-emerald-500"
-                    : "bg-yellow-500"
+                ? "bg-red-500"
+                : statusLabel === "Free"
+                ? "bg-emerald-500"
+                : "bg-yellow-500"
             }`}
           />
         </span>

@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Eye, Trash2 } from "lucide-react";
-import { FilterModal, type FilterState } from "@/components/modals/FilterModal";
+import FilterModal, {
+  type FilterType,
+} from "@/components/modals/FilterModals";
 import { useRouter } from "next/navigation";
 
 import {
@@ -11,8 +13,6 @@ import {
   type AdminRequest,
 } from "@/store/adminRequestsSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { log } from "console";
-
 export default function RenterConnectionPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -22,10 +22,10 @@ export default function RenterConnectionPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [filters, setFilters] = useState<FilterState>({
-    borough: "",
+  const [filters, setFilters] = useState<FilterType>({
+    borough: null,
     neighborhoods: [],
-    maxPrice: 0,
+    maxPrice: null,
     bedrooms: [],
     bathrooms: [],
   });
@@ -54,36 +54,29 @@ export default function RenterConnectionPage() {
       });
     }
 
-    if (filters.maxPrice) {
+    const maxPrice = filters.maxPrice;
+    if (maxPrice !== null) {
       results = results.filter(
-        (item) => (item.priceRange?.max ?? Infinity) <= filters.maxPrice
+        (item) => (item.priceRange?.max ?? Infinity) <= maxPrice
       );
     }
 
     if (filters.bedrooms.length > 0) {
+      const selectedBedrooms = new Set(filters.bedrooms.map(String));
       results = results.filter((item) =>
-        item.bedrooms?.some((b) => filters.bedrooms.includes(b))
+        item.bedrooms?.some((b) => selectedBedrooms.has(b))
       );
     }
 
     if (filters.bathrooms.length > 0) {
+      const selectedBathrooms = new Set(filters.bathrooms.map(String));
       results = results.filter((item) =>
-        item.bathrooms?.some((b) => filters.bathrooms.includes(b))
+        item.bathrooms?.some((b) => selectedBathrooms.has(b))
       );
     }
 
     return results;
   }, [filters, items]);
-
-  const resetFilters = () => {
-    setFilters({
-      borough: "",
-      neighborhoods: [],
-      maxPrice: 0,
-      bedrooms: [],
-      bathrooms: [],
-    });
-  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -180,8 +173,7 @@ export default function RenterConnectionPage() {
                   const borough = item.locations?.[0]?.borough || "-";
                   const bedrooms = item.bedrooms?.join(", ") || "-";
                   const bathrooms = item.bathrooms?.join(", ") || "-";
-                  const agentsApproved =
-                    item.agentRequestSummary?.approved ?? 0;
+                  const agentsApproved = item.agentRequestSummary?.approve ?? 0;
                   const agentsRequested = item.agentRequestSummary?.total ?? 0;
                   const requestIdentifier = item._id;
 
@@ -259,10 +251,7 @@ export default function RenterConnectionPage() {
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
-        filters={filters}
-        setFilters={setFilters}
-        onApply={() => setIsFilterOpen(false)}
-        onReset={resetFilters}
+        onApply={setFilters}
       />
     </section>
   );
