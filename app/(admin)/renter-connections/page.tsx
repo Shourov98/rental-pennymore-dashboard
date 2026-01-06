@@ -2,9 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Eye, Trash2 } from "lucide-react";
-import FilterModal, {
-  type FilterType,
-} from "@/components/modals/FilterModals";
+import FilterModal, { type FilterType } from "@/components/modals/FilterModals";
 import { useRouter } from "next/navigation";
 
 import {
@@ -114,7 +112,7 @@ export default function RenterConnectionPage() {
 
         <button
           onClick={() => setIsFilterOpen(true)}
-          className="mt-3 sm:mt-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg shadow-sm transition"
+          className="mt-3 sm:mt-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-full shadow-sm transition"
         >
           <SlidersHorizontal size={18} />
           Filter
