@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Bell, Menu } from "lucide-react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { selectAuth } from "@/store/auth/authSlice";
@@ -13,9 +14,16 @@ export default function AdminNavbar({
   onMenuClick: () => void;
 }) {
   const { user } = useAppSelector(selectAuth);
-  const displayName = user?.fullName || user?.email || "Admin";
-  const role = user?.role || "Admin";
-  const initials = (user?.fullName || user?.email || "A")
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const safeUser = mounted ? user : null;
+  const displayName = safeUser?.fullName || safeUser?.email || "Admin";
+  const role = safeUser?.role || "Admin";
+  const initials = (safeUser?.fullName || safeUser?.email || "A")
     .split(" ")
     .map((part) => part[0])
     .join("")
