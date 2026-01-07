@@ -249,7 +249,7 @@ export default function RenterManagement() {
                       ? renter.referralInfo?.referredByAgent?.referrerName
                       : referralType === "admin_referral"
                       ? "Admin"
-                      : "Tuval Mor";
+                      : "T. Mor";
 
                   return (
                     <tr
