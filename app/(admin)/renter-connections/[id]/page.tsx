@@ -229,8 +229,8 @@ export default function RenterConnectionDetailsPage() {
           {request?.requestName || "Renter Connection"}
         </h1>
 
-        <button className="mt-3 sm:mt-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-          {request?.status ? `Status: ${request.status}` : "Status ⌄"}
+        <button className="mt-3 sm:mt-0 px-4 py-2 bg-blue-600 text-blue-600 rounded-full bg-white border border-blue-600 transition text-sm font-medium">
+          {request?.status ? `${request.status}` : ""}
         </button>
       </div>
 

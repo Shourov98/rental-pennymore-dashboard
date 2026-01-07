@@ -205,7 +205,7 @@ export function PaymentCheckModal({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full text-gray-700 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             rows={3}
             disabled={submitting}
           />
