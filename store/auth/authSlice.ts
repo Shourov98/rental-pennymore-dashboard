@@ -73,6 +73,11 @@ type ResendPasswordOtpResponse = {
   message: string;
 };
 
+type ResendVerificationResponse = {
+  success: boolean;
+  message: string;
+};
+
 type ResetPasswordResponse = {
   success: boolean;
   message: string;
@@ -93,6 +98,8 @@ type AuthState = {
   resetOtp: string | null;
   resendStatus: "idle" | "loading" | "succeeded" | "failed";
   resendError: string | null;
+  resendVerificationStatus: "idle" | "loading" | "succeeded" | "failed";
+  resendVerificationError: string | null;
   resetStatus: "idle" | "loading" | "succeeded" | "failed";
   resetError: string | null;
   refreshStatus: "idle" | "loading" | "succeeded" | "failed";
@@ -130,6 +137,8 @@ const initialState: AuthState = {
   resetOtp: null,
   resendStatus: "idle",
   resendError: null,
+  resendVerificationStatus: "idle",
+  resendVerificationError: null,
   resetStatus: "idle",
   resetError: null,
   refreshStatus: "idle",
@@ -215,6 +224,27 @@ export const resendPasswordOtp = createAsyncThunk<
   try {
     const response = await apiClient.post<ResendPasswordOtpResponse>(
       "/auth/resend-password-otp",
+      { email }
+    );
+
+    return { email, message: response.data.message };
+  } catch (error) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
+
+    return rejectWithValue("Unable to resend code. Please try again.");
+  }
+});
+
+export const resendVerificationOtp = createAsyncThunk<
+  { email: string; message: string },
+  ResendPasswordOtpRequest,
+  { rejectValue: string }
+>("auth/resendVerificationOtp", async ({ email }, { rejectWithValue }) => {
+  try {
+    const response = await apiClient.post<ResendVerificationResponse>(
+      "/auth/resend-verification",
       { email }
     );
 
@@ -405,6 +435,21 @@ const authSlice = createSlice({
       .addCase(resendPasswordOtp.rejected, (state, action) => {
         state.resendStatus = "failed";
         state.resendError =
+          action.payload ??
+          action.error.message ??
+          "Failed to resend code. Please try again.";
+      })
+      .addCase(resendVerificationOtp.pending, (state) => {
+        state.resendVerificationStatus = "loading";
+        state.resendVerificationError = null;
+      })
+      .addCase(resendVerificationOtp.fulfilled, (state, action) => {
+        state.resendVerificationStatus = "succeeded";
+        state.resetEmail = action.payload.email;
+      })
+      .addCase(resendVerificationOtp.rejected, (state, action) => {
+        state.resendVerificationStatus = "failed";
+        state.resendVerificationError =
           action.payload ??
           action.error.message ??
           "Failed to resend code. Please try again.";

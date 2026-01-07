@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   selectAuth,
   verifyPasswordOtp,
-  resendPasswordOtp,
+  resendVerificationOtp,
 } from "@/store/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -16,8 +16,12 @@ function OtpVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const { resetEmail, resetOtp, verifyStatus, verifyError, resendStatus } =
-    useAppSelector(selectAuth);
+  const {
+    resetEmail,
+    verifyStatus,
+    verifyError,
+    resendVerificationStatus,
+  } = useAppSelector(selectAuth);
   const emailFromQuery = searchParams.get("email");
   const email = emailFromQuery || resetEmail || "";
   const [otp, setOtp] = useState(["", "", "", ""]);
@@ -61,7 +65,7 @@ function OtpVerifyContent() {
 
   const handleResend = async () => {
     if (!email) return;
-    await dispatch(resendPasswordOtp({ email }));
+    await dispatch(resendVerificationOtp({ email }));
   };
 
   return (
@@ -144,9 +148,11 @@ function OtpVerifyContent() {
               type="button"
               onClick={handleResend}
               className="text-blue-500 hover:text-blue-700 font-semibold disabled:opacity-60"
-              disabled={resendStatus === "loading" || !email}
+              disabled={resendVerificationStatus === "loading" || !email}
             >
-              {resendStatus === "loading" ? "Resending..." : "Resend again"}
+              {resendVerificationStatus === "loading"
+                ? "Resending..."
+                : "Resend again"}
             </button>
           </p>
 
