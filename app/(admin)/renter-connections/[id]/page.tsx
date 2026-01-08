@@ -10,6 +10,7 @@ import RenterContactCard from "@/components/RenterContactCard";
 import RenterPreferenceForm from "@/components/RenterPreferenceForm";
 import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { selectAuth } from "@/store/auth/authSlice";
 import { setCurrentRequest } from "@/store/renterConnectionSlice";
 import type { RenterRequestDetail } from "@/store/renterConnectionSlice";
 
@@ -46,7 +47,7 @@ type RequestDetailResponse = {
 };
 
 export default function RenterConnectionDetailsPage() {
-  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [selectedAgents] = useState<string[]>([]);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -61,7 +62,7 @@ export default function RenterConnectionDetailsPage() {
   >("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const { accessToken } = useAppSelector((state) => state.auth);
+  const { accessToken } = useAppSelector(selectAuth);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const params = useParams();
@@ -120,7 +121,7 @@ export default function RenterConnectionDetailsPage() {
   }, [id, loadRequest]);
 
   const renterImage = request?.renterInfo?.profileImageUrl;
-  const agentRequests = request?.agentRequests ?? [];
+  const agentRequests = useMemo(() => request?.agentRequests ?? [], [request]);
   const totalPages = 1;
   const formattedRequestData = useMemo(() => {
     const locations = request?.locations ?? [];
@@ -191,14 +192,6 @@ export default function RenterConnectionDetailsPage() {
       preferences: request?.preferences ?? [],
     };
   }, [request]);
-
-  const toggleSelection = (agentId: string) => {
-    setSelectedAgents((prev) =>
-      prev.includes(agentId)
-        ? prev.filter((a) => a !== agentId)
-        : [...prev, agentId]
-    );
-  };
 
   const getSelectedAgentRequestId = useCallback(() => {
     if (selectedAgents.length === 0) return null;
