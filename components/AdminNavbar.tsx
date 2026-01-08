@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Bell, Menu } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 
 import { selectAuth } from "@/store/auth/authSlice";
@@ -14,16 +13,9 @@ export default function AdminNavbar({
   onMenuClick: () => void;
 }) {
   const { user } = useAppSelector(selectAuth);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const safeUser = mounted ? user : null;
-  const displayName = safeUser?.fullName || safeUser?.email || "Admin";
-  const role = safeUser?.role || "Admin";
-  const initials = (safeUser?.fullName || safeUser?.email || "A")
+  const displayName = user?.fullName || user?.email || "Admin";
+  const role = user?.role || "Admin";
+  const initials = (user?.fullName || user?.email || "A")
     .split(" ")
     .map((part) => part[0])
     .join("")
@@ -47,14 +39,22 @@ export default function AdminNavbar({
       <div className="flex items-center gap-4">
         {/* User Info */}
         <div className="flex items-center gap-2 cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold">
+          <div
+            suppressHydrationWarning
+            className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold"
+          >
             {initials}
           </div>
           <div className="text-sm">
-            <p className="font-semibold text-gray-900 leading-none">
+            <p
+              suppressHydrationWarning
+              className="font-semibold text-gray-900 leading-none"
+            >
               Hello, {displayName}
             </p>
-            <p className="text-xs text-gray-500">{role}</p>
+            <p suppressHydrationWarning className="text-xs text-gray-500">
+              {role}
+            </p>
           </div>
         </div>
 
