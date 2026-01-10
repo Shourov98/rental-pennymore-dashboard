@@ -194,10 +194,21 @@ export default function AgentManagement() {
 
   const isExporting = exportStatus === "loading";
 
+  const totalItems = pagination?.total ?? agents.length;
+  const itemsPerPage = pagination?.limit ?? limit;
+  const currentPage = pagination?.page ?? page;
+  const totalPages = pagination?.pages
+    ? Math.max(1, pagination.pages)
+    : Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const prevPage = hasPrev ? currentPage - 1 : null;
+  const nextPage = hasNext ? currentPage + 1 : null;
+
   const pageNumbers = useMemo(() => {
-    if (!pagination) return [];
-    const total = pagination.pages;
-    const current = pagination.page;
+    if (totalPages <= 1) return [];
+    const total = totalPages;
+    const current = currentPage;
     const windowSize = 5;
     const start = Math.max(1, current - Math.floor(windowSize / 2));
     const end = Math.min(total, start + windowSize - 1);
@@ -206,7 +217,7 @@ export default function AgentManagement() {
       { length: end - adjustedStart + 1 },
       (_, i) => adjustedStart + i
     );
-  }, [pagination]);
+  }, [currentPage, totalPages]);
 
   const formatDate = (value: string | null | undefined) => {
     if (!value) return "Not Yet";
@@ -356,26 +367,20 @@ export default function AgentManagement() {
       <div className="flex justify-between items-center text-sm text-gray-600">
         <p>
           No of Results {agents.length} out of{" "}
-          {pagination?.total ?? agents.length}
+          {totalItems}
         </p>
 
         <div className="flex items-center gap-2">
           <button
             className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-            disabled={
-              !pagination || pagination.page <= 1 || status === "loading"
-            }
-            onClick={() =>
-              pagination?.page && pagination.page > 1
-                ? setPage(pagination.page - 1)
-                : null
-            }
+            disabled={!hasPrev || status === "loading"}
+            onClick={() => (prevPage ? setPage(prevPage) : null)}
           >
             &lt;
           </button>
 
           {pageNumbers.map((pageNumber) => {
-            const isActive = pageNumber === (pagination?.page ?? 1);
+            const isActive = pageNumber === currentPage;
             return (
               <button
                 key={pageNumber}
@@ -394,16 +399,8 @@ export default function AgentManagement() {
 
           <button
             className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-            disabled={
-              !pagination ||
-              pagination.page >= pagination.pages ||
-              status === "loading"
-            }
-            onClick={() =>
-              pagination?.page && pagination.page < pagination.pages
-                ? setPage(pagination.page + 1)
-                : null
-            }
+            disabled={!hasNext || status === "loading"}
+            onClick={() => (nextPage ? setPage(nextPage) : null)}
           >
             &gt;
           </button>

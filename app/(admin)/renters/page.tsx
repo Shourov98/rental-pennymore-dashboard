@@ -156,10 +156,23 @@ export default function RenterManagement() {
 
   const isExporting = exportStatus === "loading";
 
+  const totalItems = pagination?.totalItems ?? renters.length;
+  const itemsPerPage = pagination?.itemsPerPage ?? limit;
+  const currentPage = pagination?.currentPage ?? page;
+  const totalPages = pagination?.totalPages
+    ? Math.max(1, pagination.totalPages)
+    : Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const hasPrev = pagination?.hasPrev ?? currentPage > 1;
+  const hasNext = pagination?.hasNext ?? currentPage < totalPages;
+  const prevPage =
+    pagination?.prevPage ?? (hasPrev ? Math.max(1, currentPage - 1) : null);
+  const nextPage =
+    pagination?.nextPage ?? (hasNext ? currentPage + 1 : null);
+
   const pageNumbers = useMemo(() => {
-    if (!pagination) return [];
-    const total = pagination.totalPages;
-    const current = pagination.currentPage;
+    if (totalPages <= 1) return [];
+    const total = totalPages;
+    const current = currentPage;
     const windowSize = 5;
     const start = Math.max(1, current - Math.floor(windowSize / 2));
     const end = Math.min(total, start + windowSize - 1);
@@ -168,12 +181,10 @@ export default function RenterManagement() {
       { length: end - adjustedStart + 1 },
       (_, i) => adjustedStart + i
     );
-  }, [pagination]);
+  }, [currentPage, totalPages]);
 
   const startIndex =
-    pagination && pagination.currentPage > 1
-      ? (pagination.currentPage - 1) * pagination.itemsPerPage
-      : 0;
+    currentPage > 1 ? (currentPage - 1) * itemsPerPage : 0;
 
   const formatReferralName = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);
@@ -305,15 +316,15 @@ export default function RenterManagement() {
       <div className="flex justify-between items-center text-sm text-gray-600">
         <p>
           No of Results {renters.length} out of{" "}
-          {pagination?.totalItems ?? renters.length}
+          {totalItems}
         </p>
 
         <div className="flex items-center gap-2">
           <button
             className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-            disabled={!pagination?.hasPrev || status === "loading"}
+            disabled={!hasPrev || status === "loading"}
             onClick={() =>
-              pagination?.prevPage ? setPage(pagination.prevPage) : null
+              prevPage ? setPage(prevPage) : null
             }
           >
             &lt;
@@ -326,8 +337,8 @@ export default function RenterManagement() {
                 key={pageNumber}
                 className={`border rounded-full w-8 h-8 ${
                   isActive
-                    ? "border-blue-500 text-blue-500"
-                    : "text-gray-600 hover:bg-gray-100"
+                  ? "border-blue-500 text-blue-500"
+                  : "text-gray-600 hover:bg-gray-100"
                 }`}
                 disabled={status === "loading"}
                 onClick={() => setPage(pageNumber)}
@@ -339,9 +350,9 @@ export default function RenterManagement() {
 
           <button
             className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-            disabled={!pagination?.hasNext || status === "loading"}
+            disabled={!hasNext || status === "loading"}
             onClick={() =>
-              pagination?.nextPage ? setPage(pagination.nextPage) : null
+              nextPage ? setPage(nextPage) : null
             }
           >
             &gt;

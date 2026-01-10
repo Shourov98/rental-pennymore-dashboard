@@ -51,6 +51,19 @@ type RequestDetails = {
     phoneNumber?: string;
     profileImageUrl?: string | null;
     registrationType?: string;
+    referralInfo?: {
+      registrationType?: string;
+      referredByAgent?: {
+        referredBy?: string;
+        referrerName?: string;
+        referrerEmail?: string;
+      };
+      referredByAdmin?: {
+        referredBy?: string;
+        referrerName?: string;
+        referrerEmail?: string;
+      };
+    };
   };
 };
 
@@ -191,7 +204,14 @@ export default function RequestDetailsPage() {
               email: renter?.email ?? "-",
               phone: renter?.phoneNumber ?? "-",
               image: renter?.profileImageUrl ?? undefined,
-              referralType: renter?.registrationType ?? "normal",
+              referrerName:
+                renter?.referralInfo?.referredByAgent?.referrerName ??
+                renter?.referralInfo?.referredByAdmin?.referrerName ??
+                "Tuval Mor",
+              referralType:
+                renter?.referralInfo?.registrationType ??
+                renter?.registrationType ??
+                "admin_referral",
             }}
           />
           <section className="w-full bg-white rounded-xl shadow-sm p-6 sm:p-8 md:p-10">

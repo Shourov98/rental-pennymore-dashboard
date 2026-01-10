@@ -35,9 +35,15 @@ type RenterDetails = {
   email: string;
   fullName: string;
   phoneNumber: string;
+  profileImage?: string | null;
   referralInfo?: {
     registrationType?: string;
     referredByAgent?: {
+      referredBy?: string;
+      referrerName?: string;
+      referrerEmail?: string;
+    };
+    referredByAdmin?: {
       referredBy?: string;
       referrerName?: string;
       referrerEmail?: string;
@@ -161,10 +167,13 @@ export default function RenterDetailsPage() {
                 name: renter.fullName,
                 email: renter.email,
                 phone: renter.phoneNumber,
-                image: "https://randomuser.me/api/portraits/men/31.jpg",
+                image: renter.profileImage ?? undefined,
                 referrerName:
-                  renter.referralInfo?.referredByAgent?.referrerName,
-                referralType: renter.referralInfo?.registrationType ?? "normal",
+                  renter.referralInfo?.referredByAgent?.referrerName ??
+                  renter.referralInfo?.referredByAdmin?.referrerName ??
+                  "Tuval Mor",
+                referralType:
+                  renter.referralInfo?.registrationType ?? "admin_referral",
               }}
             />
           </div>

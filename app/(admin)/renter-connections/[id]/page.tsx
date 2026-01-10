@@ -241,6 +241,10 @@ export default function RenterConnectionDetailsPage() {
               email: request.renterInfo?.email ?? "N/A",
               phone: request.renterInfo?.phoneNumber ?? "N/A",
               referrerName: request.renterInfo?.referralInfo?.referrerName,
+              referralType:
+                request.renterInfo?.registrationType ??
+                request.renterInfo?.referralInfo?.referrerType ??
+                "normal",
             }}
           />
 

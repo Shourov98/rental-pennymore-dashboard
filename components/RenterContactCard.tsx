@@ -36,7 +36,9 @@ export default function RenterContactCard({ renter }: RenterContactCardProps) {
       ? formatAgentName(renter.referrerName)
       : "None"
     : isAdminReferral
-      ? "Admin"
+      ? renter.referrerName
+        ? formatAgentName(renter.referrerName)
+        : "Admin"
       : "None";
 
   return (

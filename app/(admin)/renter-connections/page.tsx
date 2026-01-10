@@ -76,6 +76,19 @@ export default function RenterConnectionPage() {
     return results;
   }, [filters, items]);
 
+  const totalItems = pagination?.totalItems ?? filteredData.length;
+  const itemsPerPage = pagination?.itemsPerPage ?? 20;
+  const totalPages = pagination?.totalPages
+    ? Math.max(1, pagination.totalPages)
+    : Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const pageNumber = pagination?.currentPage ?? currentPage;
+  const hasPrev = pagination?.hasPrev ?? pageNumber > 1;
+  const hasNext = pagination?.hasNext ?? pageNumber < totalPages;
+  const prevPage =
+    pagination?.prevPage ?? (hasPrev ? Math.max(1, pageNumber - 1) : null);
+  const nextPage =
+    pagination?.nextPage ?? (hasNext ? pageNumber + 1 : null);
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
@@ -92,14 +105,14 @@ export default function RenterConnectionPage() {
   };
 
   const handlePrev = () => {
-    if (pagination?.hasPrev && pagination.prevPage) {
-      setCurrentPage(pagination.prevPage);
+    if (prevPage) {
+      setCurrentPage(prevPage);
     }
   };
 
   const handleNext = () => {
-    if (pagination?.hasNext && pagination.nextPage) {
-      setCurrentPage(pagination.nextPage);
+    if (nextPage) {
+      setCurrentPage(nextPage);
     }
   };
 
@@ -225,20 +238,19 @@ export default function RenterConnectionPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-3">
         <p className="text-sm text-gray-600">
-          Page {pagination?.currentPage ?? 1} of {pagination?.totalPages ?? 1} •{" "}
-          {pagination?.totalItems ?? filteredData.length} total
+          Page {pageNumber} of {totalPages} • {totalItems} total
         </p>
         <div className="flex gap-2">
           <button
             onClick={handlePrev}
-            disabled={!pagination?.hasPrev || status === "loading"}
+            disabled={!hasPrev || status === "loading"}
             className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
           >
             Previous
           </button>
           <button
             onClick={handleNext}
-            disabled={!pagination?.hasNext || status === "loading"}
+            disabled={!hasNext || status === "loading"}
             className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
           >
             Next
