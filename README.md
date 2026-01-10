@@ -1,36 +1,166 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Penny More Dashboard
 
-## Getting Started
+A modern, responsive dashboard application built with Next.js, React, and Tailwind CSS. This dashboard provides administrative interfaces for managing renters and property-related operations.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Modern, responsive UI built with Next.js 13+ and Tailwind CSS
+- Admin dashboard with renter management
+- Data visualization with Recharts
+- State management with Redux Toolkit
+- TypeScript support for type safety
+- ESLint and Prettier for code quality
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- Node.js 18.0.0 or later
+- npm (comes with Node.js) or yarn
+- Git (for version control)
+
+## 🛠 Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/your-username/penny-more-dashboard.git
+   cd penny-more-dashboard
+   ```
+
+2. **Install dependencies**
+   Using npm:
+
+   ```bash
+   npm install
+   ```
+
+   Or using yarn:
+
+   ```bash
+   yarn install
+   ```
+
+3. **Environment Setup**
+   Create a `.env.local` file in the root directory and add your environment variables:
+   ```env
+   NEXT_PUBLIC_API_URL=your_api_url_here
+   # Add other environment variables as needed
+   ```
+
+## 🚦 Available Scripts
+
+In the project directory, you can run:
+
+- `npm run dev` or `yarn dev`
+
+  - Runs the app in development mode.
+  - Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+  - The page will reload when you make changes.
+
+- `npm run build` or `yarn build`
+
+  - Builds the app for production to the `.next` folder.
+  - It correctly bundles React in production mode and optimizes the build for the best performance.
+
+- `npm start` or `yarn start`
+
+  - Starts the production server.
+  - The app will be served at [http://localhost:3000](http://localhost:3000)
+
+- `npm run lint` or `yarn lint`
+  - Runs ESLint to check for code quality issues.
+
+## 🏗 Project Structure
+
+```
+.
+├── app/                    # App router directory
+│   ├── (admin)/            # Admin routes group
+│   │   └── renters/        # Renters management section
+│   │       └── page.tsx    # Renters page component
+│   └── ...
+├── components/             # Reusable UI components
+│   ├── AdminNavbar.tsx     # Navigation bar for admin section
+│   └── ...
+├── public/                 # Static files
+├── styles/                 # Global styles
+├── types/                  # TypeScript type definitions
+├── .eslintrc.json          # ESLint configuration
+├── next.config.js          # Next.js configuration
+├── package.json            # Project dependencies and scripts
+├── postcss.config.js       # PostCSS configuration
+└── tailwind.config.js      # Tailwind CSS configuration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎨 Styling
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This project uses:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
+- [Lucide React](https://lucide.dev/) for icons
+- Custom CSS modules for component-specific styles
 
-## Learn More
+## 📦 Dependencies
 
-To learn more about Next.js, take a look at the following resources:
+### Main Dependencies
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Next.js 13+
+- React 18
+- TypeScript
+- Redux Toolkit (for state management)
+- Axios (for API requests)
+- Recharts (for data visualization)
+- Lucide React (for icons)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Development Dependencies
 
-## Deploy on Vercel
+- ESLint
+- Prettier
+- Tailwind CSS
+- PostCSS
+- TypeScript types
+
+## 🌐 Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```env
+NEXT_PUBLIC_API_URL=your_api_url_here
+# Add other environment variables as needed
+```
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme)
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Other Platforms
+
+You can also deploy to other platforms that support Next.js applications, such as:
+
+- [Netlify](https://www.netlify.com/)
+- [AWS Amplify](https://aws.amazon.com/amplify/)
+- [Heroku](https://www.heroku.com/)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Redux Toolkit Documentation](https://redux-toolkit.js.org/)
+- [Recharts Documentation](https://recharts.org/)

@@ -79,11 +79,11 @@ export default function ReportViewPage() {
   const monthLabel = useMemo(() => {
     const formatter = new Intl.DateTimeFormat("en-US", { month: "short" });
     return (month: string, year: number) => {
-      const monthIndex = Number(month) - 1;
-      if (Number.isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+      const monthNumber = Number.parseInt(month, 10);
+      if (!Number.isFinite(monthNumber) || monthNumber < 1 || monthNumber > 12) {
         return `${month}, ${year}`;
       }
-      const date = new Date(Date.UTC(year, monthIndex, 1));
+      const date = new Date(Date.UTC(year, monthNumber - 1, 1));
       return `${formatter.format(date)}, ${year}`;
     };
   }, []);
