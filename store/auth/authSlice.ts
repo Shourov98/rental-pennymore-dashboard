@@ -241,7 +241,7 @@ export const resendVerificationOtp = createAsyncThunk<
   { email: string; message: string },
   ResendPasswordOtpRequest,
   { rejectValue: string }
->("auth/resendVerificationOtp", async ({ email }, { rejectWithValue }) => {
+>("/auth/resend-password-otp", async ({ email }, { rejectWithValue }) => {
   try {
     const response = await apiClient.post<ResendVerificationResponse>(
       "/auth/resend-verification",
