@@ -20,7 +20,7 @@ export default function RenterContactCard({ renter }: RenterContactCardProps) {
     const firstName = parts[0] ?? "";
     const lastName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
     if (!firstName) return fullName;
-    return `${firstName[0]}. ${lastName}`;
+    return `${firstName[0]}.${lastName}`;
   };
 
   const normalizedReferralType = renter.referralType?.toLowerCase();
@@ -31,15 +31,15 @@ export default function RenterContactCard({ renter }: RenterContactCardProps) {
     normalizedReferralType === "admin_referral" ||
     normalizedReferralType === "admin";
 
-  const referralLabel = isAgentReferral
-    ? renter.referrerName
-      ? formatAgentName(renter.referrerName)
-      : "None"
-    : isAdminReferral
+  const fallbackReferralLabel = "T.Mor";
+  const referralLabel =
+    isAgentReferral || isAdminReferral
       ? renter.referrerName
         ? formatAgentName(renter.referrerName)
-        : "Admin"
-      : "None";
+        : fallbackReferralLabel
+      : renter.referrerName
+        ? formatAgentName(renter.referrerName)
+        : fallbackReferralLabel;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row gap-10 items-center md:items-start">
