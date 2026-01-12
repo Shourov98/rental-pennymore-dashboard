@@ -36,6 +36,7 @@ type User = {
   accountStatus: string;
   emailVerified: boolean;
   lastLoginAt: string;
+  profileImageUrl?: string | null;
   referralCode: string;
   referralLink: string;
   totalReferrals: number;

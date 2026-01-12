@@ -15,6 +15,7 @@ export default function AdminNavbar({
   const { user } = useAppSelector(selectAuth);
   const displayName = user?.fullName || user?.email || "Admin";
   const role = user?.role || "Admin";
+  const profileImageUrl = user?.profileImageUrl ?? null;
   const initials = (user?.fullName || user?.email || "A")
     .split(" ")
     .map((part) => part[0])
@@ -41,9 +42,19 @@ export default function AdminNavbar({
         <div className="flex items-center gap-2 cursor-pointer">
           <div
             suppressHydrationWarning
-            className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold"
+            className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold overflow-hidden"
           >
-            {initials}
+            {profileImageUrl ? (
+              <Image
+                src={profileImageUrl}
+                alt="Profile"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              initials
+            )}
           </div>
           <div className="text-sm">
             <p

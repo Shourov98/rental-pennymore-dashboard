@@ -13,7 +13,7 @@ type ProfileData = {
   phone?: string;
   referralLink?: string;
   referralCode?: string;
-  profileImage?: string | null;
+  profileImageUrl?: string | null;
 };
 
 type ProfileResponse = {
@@ -59,7 +59,7 @@ export default function ProfilePage() {
           const snapshot = {
             fullName: response.data.data.fullName ?? "",
             phone: response.data.data.phone ?? "",
-            profileImage: response.data.data.profileImage ?? null,
+            profileImageUrl: response.data.data.profileImageUrl ?? null,
             referralLink: response.data.data.referralLink ?? null,
             referralCode: response.data.data.referralCode ?? null,
           };
@@ -113,9 +113,9 @@ export default function ProfilePage() {
       <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col md:flex-row items-start gap-8">
         {/* Profile Image */}
         <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-          {profile?.profileImage ? (
+          {profile?.profileImageUrl ? (
             <Image
-              src={profile.profileImage}
+              src={profile.profileImageUrl}
               alt="Profile"
               width={160}
               height={160}

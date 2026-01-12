@@ -10,7 +10,7 @@ import { useAppSelector } from "@/store/hooks";
 type ProfileData = {
   fullName?: string;
   phone?: string;
-  profileImage?: string | null;
+  profileImageUrl?: string | null;
 };
 
 type ProfileResponse = {
@@ -24,7 +24,7 @@ type UploadResponse = {
   success?: boolean;
   message?: string;
   data?: {
-    profileImage?: string;
+    profileImageUrl?: string;
     url?: string;
   };
 };
@@ -50,12 +50,14 @@ export default function EditProfilePage() {
           const parsed = JSON.parse(cachedProfile) as {
             fullName?: string;
             phone?: string;
+            profileImageUrl?: string | null;
             profileImage?: string | null;
           };
           setFullName(parsed.fullName ?? "");
           setPhoneNumber(parsed.phone ?? "");
-          if (parsed.profileImage) {
-            setImage(parsed.profileImage);
+          const cachedImage = parsed.profileImageUrl ?? parsed.profileImage;
+          if (cachedImage) {
+            setImage(cachedImage);
           }
         } catch {
           localStorage.removeItem("profileSnapshot");
@@ -80,8 +82,8 @@ export default function EditProfilePage() {
         if (!isMounted) return;
         setFullName(response.data.data.fullName ?? "");
         setPhoneNumber(response.data.data.phone ?? "");
-        if (response.data.data.profileImage) {
-          setImage(response.data.data.profileImage);
+        if (response.data.data.profileImageUrl) {
+          setImage(response.data.data.profileImageUrl);
         }
         setStatus("idle");
       } catch (err) {
@@ -133,7 +135,7 @@ export default function EditProfilePage() {
           }
         );
         const uploadedUrl =
-          uploadResponse.data?.data?.profileImage ??
+          uploadResponse.data?.data?.profileImageUrl ??
           uploadResponse.data?.data?.url;
         if (uploadedUrl) {
           setImage(uploadedUrl);
@@ -242,7 +244,7 @@ export default function EditProfilePage() {
                 type="text"
                 placeholder="Name"
                 value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
+                readOnly
                 className="bg-transparent outline-none text-sm text-gray-800 w-full"
               />
             </div>

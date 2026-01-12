@@ -21,6 +21,7 @@ type MonthlyIncomeResponse = {
 
 export default function AdminDashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const { user, accessToken } = useAppSelector(selectAuth);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -40,10 +41,31 @@ export default function AdminDashboard() {
 
   const referralLink = user?.referralLink ?? "";
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 1500);
+  const handleCopy = async () => {
+    if (!referralLink) return;
+    setCopyError(null);
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(referralLink);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = referralLink;
+        textArea.style.position = "fixed";
+        textArea.style.top = "-1000px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(textArea);
+        if (!copied) {
+          throw new Error("Copy failed");
+        }
+      }
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 1500);
+    } catch (err) {
+      setCopyError("Unable to copy link.");
+    }
   };
 
   useEffect(() => {
@@ -127,6 +149,7 @@ export default function AdminDashboard() {
 
           <button
             onClick={handleCopy}
+            disabled={!referralLink}
             className="flex items-center justify-center sm:justify-start gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 text-sm font-medium rounded-2xl transition w-full sm:w-auto"
           >
             <Copy className="w-4 h-4" />
@@ -140,6 +163,9 @@ export default function AdminDashboard() {
           value={referralLink}
           className="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none"
         />
+        {copyError ? (
+          <p className="text-sm text-red-600">{copyError}</p>
+        ) : null}
       </div>
 
       {/* Monthly Breakdown */}

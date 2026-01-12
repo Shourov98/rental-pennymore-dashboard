@@ -48,7 +48,7 @@ export default function SigninPage() {
 
       {/* Headings */}
       <h2 className="text-2xl sm:text-3xl font-semibold text-center text-black mb-2">
-        Welcome Back!
+        Welcome!
       </h2>
       <p className="text-text-tertiary text-center mb-6 text-sm text-black">
         To login, enter your email address
@@ -108,7 +108,9 @@ export default function SigninPage() {
               className="text-action"
             >
               <Image
-                src={showPassword ? "/icons/view-closed.svg" : "/icons/view.svg"}
+                src={
+                  showPassword ? "/icons/view-closed.svg" : "/icons/view.svg"
+                }
                 alt={showPassword ? "Hide password" : "Show password"}
                 width={20}
                 height={20}
