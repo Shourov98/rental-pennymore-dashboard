@@ -30,7 +30,7 @@ export default function FilterModal({
   onClose: () => void;
   onApply: (filters: FilterType) => void;
 }) {
-  const [borough, setBorough] = useState<string | null>("Manhattan");
+  const [borough, setBorough] = useState<string | null>(null);
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>(
     []
   );
@@ -68,7 +68,7 @@ export default function FilterModal({
   };
 
   const resetAll = () => {
-    setBorough("Manhattan");
+    setBorough(null);
     setSelectedNeighborhoods([]);
     setBedrooms([]);
     setBathrooms([]);

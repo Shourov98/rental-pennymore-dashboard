@@ -22,10 +22,15 @@ type Agent = {
 };
 
 type Pagination = {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  nextPage: number | null;
+  prevPage: number | null;
+  slNo: number;
 };
 
 type AgentsResponse = {
@@ -194,16 +199,18 @@ export default function AgentManagement() {
 
   const isExporting = exportStatus === "loading";
 
-  const totalItems = pagination?.total ?? agents.length;
-  const itemsPerPage = pagination?.limit ?? limit;
-  const currentPage = pagination?.page ?? page;
-  const totalPages = pagination?.pages
-    ? Math.max(1, pagination.pages)
+  const totalItems = pagination?.totalItems ?? agents.length;
+  const itemsPerPage = pagination?.itemsPerPage ?? limit;
+  const currentPage = pagination?.currentPage ?? page;
+  const totalPages = pagination?.totalPages
+    ? Math.max(1, pagination.totalPages)
     : Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const hasPrev = currentPage > 1;
-  const hasNext = currentPage < totalPages;
-  const prevPage = hasPrev ? currentPage - 1 : null;
-  const nextPage = hasNext ? currentPage + 1 : null;
+  const hasPrev = pagination?.hasPrev ?? currentPage > 1;
+  const hasNext = pagination?.hasNext ?? currentPage < totalPages;
+  const prevPage =
+    pagination?.prevPage ?? (hasPrev ? currentPage - 1 : null);
+  const nextPage =
+    pagination?.nextPage ?? (hasNext ? currentPage + 1 : null);
 
   const pageNumbers = useMemo(() => {
     if (totalPages <= 1) return [];

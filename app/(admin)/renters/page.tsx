@@ -183,8 +183,11 @@ export default function RenterManagement() {
     );
   }, [currentPage, totalPages]);
 
-  const startIndex =
-    currentPage > 1 ? (currentPage - 1) * itemsPerPage : 0;
+  const startIndex = pagination?.slNo
+    ? Math.max(0, pagination.slNo - 1)
+    : currentPage > 1
+      ? (currentPage - 1) * itemsPerPage
+      : 0;
 
   const formatReferralName = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);

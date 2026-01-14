@@ -43,10 +43,15 @@ type PaymentsResponse = {
   message: string;
   data: PaymentItem[];
   pagination?: {
-    total: number;
-    page: number;
-    limit: number;
-    pages: number;
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+    nextPage: number | null;
+    prevPage: number | null;
+    slNo: number;
   };
   timestamp: string;
 };
@@ -158,11 +163,36 @@ export default function PaymentListPage() {
     };
   }, [accessToken, page]);
 
-  const totalResults = pagination?.total ?? payments.length;
+  const totalResults = pagination?.totalItems ?? payments.length;
+  const itemsPerPage = pagination?.itemsPerPage ?? limit;
+  const currentPage = pagination?.currentPage ?? page;
+  const totalPages = pagination?.totalPages
+    ? Math.max(1, pagination.totalPages)
+    : Math.max(1, Math.ceil(totalResults / itemsPerPage));
+  const hasPrev = pagination?.hasPrev ?? currentPage > 1;
+  const hasNext = pagination?.hasNext ?? currentPage < totalPages;
+  const prevPage =
+    pagination?.prevPage ?? (hasPrev ? currentPage - 1 : null);
+  const nextPage =
+    pagination?.nextPage ?? (hasNext ? currentPage + 1 : null);
+  const startIndex = pagination?.slNo
+    ? Math.max(0, pagination.slNo - 1)
+    : currentPage > 1
+      ? (currentPage - 1) * itemsPerPage
+      : 0;
   const pageNumbers = useMemo(() => {
-    if (!pagination) return [];
-    return Array.from({ length: pagination.pages }, (_, i) => i + 1);
-  }, [pagination]);
+    if (totalPages <= 1) return [];
+    const total = totalPages;
+    const current = currentPage;
+    const windowSize = 5;
+    const start = Math.max(1, current - Math.floor(windowSize / 2));
+    const end = Math.min(total, start + windowSize - 1);
+    const adjustedStart = Math.max(1, end - windowSize + 1);
+    return Array.from(
+      { length: end - adjustedStart + 1 },
+      (_, i) => adjustedStart + i
+    );
+  }, [currentPage, totalPages]);
 
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6 space-y-6">
@@ -219,7 +249,7 @@ export default function PaymentListPage() {
                       className="border-t border-gray-100 hover:bg-gray-50 transition"
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {String(idx + 1).padStart(2, "0")}
+                        {String(startIndex + idx + 1).padStart(2, "0")}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {agentName}
@@ -265,14 +295,23 @@ export default function PaymentListPage() {
       <p className="text-xs text-gray-500">
         No of Results {payments.length} out of {totalResults}
       </p>
-      {pagination && pagination.pages > 1 ? (
+      {totalPages > 1 ? (
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => (prevPage ? setPage(prevPage) : null)}
+            disabled={!hasPrev || status === "loading"}
+            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+          >
+            &lt;
+          </button>
+
           {pageNumbers.map((pageNumber) => (
             <button
               key={pageNumber}
               onClick={() => setPage(pageNumber)}
+              disabled={status === "loading"}
               className={`w-8 h-8 flex items-center justify-center rounded-md border text-sm ${
-                page === pageNumber
+                currentPage === pageNumber
                   ? "bg-white border-blue-500 text-blue-600"
                   : "border-gray-200 hover:bg-gray-100 text-gray-700"
               }`}
@@ -280,6 +319,14 @@ export default function PaymentListPage() {
               {pageNumber}
             </button>
           ))}
+
+          <button
+            onClick={() => (nextPage ? setPage(nextPage) : null)}
+            disabled={!hasNext || status === "loading"}
+            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+          >
+            &gt;
+          </button>
         </div>
       ) : null}
     </section>

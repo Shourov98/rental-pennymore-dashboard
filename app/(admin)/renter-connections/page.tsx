@@ -86,8 +86,7 @@ export default function RenterConnectionPage() {
   const hasNext = pagination?.hasNext ?? pageNumber < totalPages;
   const prevPage =
     pagination?.prevPage ?? (hasPrev ? Math.max(1, pageNumber - 1) : null);
-  const nextPage =
-    pagination?.nextPage ?? (hasNext ? pageNumber + 1 : null);
+  const nextPage = pagination?.nextPage ?? (hasNext ? pageNumber + 1 : null);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -124,6 +123,7 @@ export default function RenterConnectionPage() {
         </h1>
 
         <button
+          type="button"
           onClick={() => setIsFilterOpen(true)}
           className="mt-3 sm:mt-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-full shadow-sm transition"
         >
@@ -176,7 +176,9 @@ export default function RenterConnectionPage() {
                     className="px-4 py-6 text-center text-gray-600"
                     colSpan={9}
                   >
-                    No requests found.
+                    <div className="flex flex-col items-center gap-3">
+                      <span>No requests found.</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
