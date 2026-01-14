@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   selectAuth,
   verifyPasswordOtp,
-  resendVerificationOtp,
+  resendPasswordOtp,
 } from "@/store/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -20,7 +20,7 @@ function OtpVerifyContent() {
     resetEmail,
     verifyStatus,
     verifyError,
-    resendVerificationStatus,
+    resendStatus,
   } = useAppSelector(selectAuth);
   const emailFromQuery = searchParams.get("email");
   const email = emailFromQuery || resetEmail || "";
@@ -65,7 +65,7 @@ function OtpVerifyContent() {
 
   const handleResend = async () => {
     if (!email) return;
-    await dispatch(resendVerificationOtp({ email }));
+    await dispatch(resendPasswordOtp({ email }));
   };
 
   return (
@@ -148,9 +148,9 @@ function OtpVerifyContent() {
               type="button"
               onClick={handleResend}
               className="text-blue-500 hover:text-blue-700 font-semibold disabled:opacity-60"
-              disabled={resendVerificationStatus === "loading" || !email}
+              disabled={resendStatus === "loading" || !email}
             >
-              {resendVerificationStatus === "loading"
+              {resendStatus === "loading"
                 ? "Resending..."
                 : "Resend again"}
             </button>
