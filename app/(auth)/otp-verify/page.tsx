@@ -16,12 +16,8 @@ function OtpVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
-  const {
-    resetEmail,
-    verifyStatus,
-    verifyError,
-    resendStatus,
-  } = useAppSelector(selectAuth);
+  const { resetEmail, verifyStatus, verifyError, resendStatus } =
+    useAppSelector(selectAuth);
   const emailFromQuery = searchParams.get("email");
   const email = emailFromQuery || resetEmail || "";
   const [otp, setOtp] = useState(["", "", "", ""]);
@@ -41,7 +37,7 @@ function OtpVerifyContent() {
 
   const handleKeyDown = (
     index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
@@ -90,7 +86,7 @@ function OtpVerifyContent() {
       <p className="text-center text-gray-800 mb-6 text-sm sm:text-base">
         We sent an OTP code to your email <br />
         <span className="text-blue-700 font-medium">
-          {email || "your email"}
+          {email || "your email"}{" "}
         </span>
         Enter the code below to verify within 1 min.
       </p>
@@ -150,9 +146,7 @@ function OtpVerifyContent() {
               className="text-blue-500 hover:text-blue-700 font-semibold disabled:opacity-60"
               disabled={resendStatus === "loading" || !email}
             >
-              {resendStatus === "loading"
-                ? "Resending..."
-                : "Resend again"}
+              {resendStatus === "loading" ? "Resending..." : "Resend again"}
             </button>
           </p>
 

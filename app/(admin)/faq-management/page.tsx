@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Edit } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAppSelector } from "@/store/hooks";
@@ -32,6 +32,126 @@ export default function FaqManagementPage() {
   const [newAnswer, setNewAnswer] = useState("");
   const [editOrder, setEditOrder] = useState<number | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+
+  const isProbablyHtml = (value: string) =>
+    /<\/?[a-z][\s\S]*>/i.test(value);
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const toEditorHtml = (value: string) => {
+    if (!value) return "";
+    if (isProbablyHtml(value)) return value;
+    return escapeHtml(value).replace(/\n/g, "<br>");
+  };
+
+  const toDisplayHtml = (value: string) => toEditorHtml(value);
+
+  const getPlainText = (value: string) =>
+    value
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div)>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+
+  const answerText = getPlainText(newAnswer);
+
+  const RichTextEditor = ({
+    value,
+    onChange,
+    disabled,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    disabled: boolean;
+    placeholder: string;
+  }) => {
+    const editorRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      if (editorRef.current && editorRef.current.innerHTML !== value) {
+        editorRef.current.innerHTML = value;
+      }
+    }, [value]);
+
+    const applyCommand = (command: string) => {
+      if (disabled) return;
+      document.execCommand(command);
+      editorRef.current?.focus();
+      onChange(editorRef.current?.innerHTML ?? "");
+    };
+
+    const handleInput = () => {
+      onChange(editorRef.current?.innerHTML ?? "");
+    };
+
+    return (
+      <div className="w-full">
+        <div className="flex flex-wrap gap-2 mb-2">
+          <button
+            type="button"
+            onClick={() => applyCommand("bold")}
+            disabled={disabled}
+            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Bold
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("italic")}
+            disabled={disabled}
+            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Italic
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("underline")}
+            disabled={disabled}
+            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Underline
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("insertUnorderedList")}
+            disabled={disabled}
+            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Bullets
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("insertOrderedList")}
+            disabled={disabled}
+            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Numbered
+          </button>
+        </div>
+        <div className="relative">
+          {getPlainText(value) === "" ? (
+            <span className="absolute left-3 top-2 text-sm text-gray-400 pointer-events-none">
+              {placeholder}
+            </span>
+          ) : null}
+          <div
+            ref={editorRef}
+            contentEditable={!disabled}
+            onInput={handleInput}
+            className="min-h-[96px] w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+    );
+  };
 
   const fetchFaqs = useCallback(async () => {
     try {
@@ -78,7 +198,7 @@ export default function FaqManagementPage() {
   };
 
   const handleSave = async () => {
-    if (!newQuestion.trim() || !newAnswer.trim()) return;
+    if (!newQuestion.trim() || !answerText) return;
 
     try {
       setSaveStatus("saving");
@@ -122,7 +242,7 @@ export default function FaqManagementPage() {
   const startEditing = (faq: FAQ) => {
     setEditId(faq._id);
     setNewQuestion(faq.question);
-    setNewAnswer(faq.answer);
+    setNewAnswer(toEditorHtml(faq.answer));
     setEditOrder(faq.order);
     setSaveStatus("idle");
     setError(null);
@@ -175,9 +295,9 @@ export default function FaqManagementPage() {
 
           <button
             onClick={handleSave}
-            disabled={!newQuestion.trim() || !newAnswer.trim() || isBusy}
+            disabled={!newQuestion.trim() || !answerText || isBusy}
             className={`px-5 py-2.5 rounded-lg text-sm font-medium transition ${
-              newQuestion.trim() && newAnswer.trim() && !isBusy
+              newQuestion.trim() && answerText && !isBusy
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-blue-100 text-gray-400 cursor-not-allowed"
             }`}
@@ -208,12 +328,10 @@ export default function FaqManagementPage() {
           />
 
           {/* Answer */}
-          <textarea
+          <RichTextEditor
             value={newAnswer}
-            onChange={(e) => setNewAnswer(e.target.value)}
+            onChange={setNewAnswer}
             placeholder="Enter answer"
-            rows={3}
-            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             disabled={isBusy}
           />
         </div>
@@ -240,11 +358,14 @@ export default function FaqManagementPage() {
                 ? newQuestion
                 : "Sample: What is BeforeListed?"}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
-              {newAnswer.trim()
-                ? newAnswer
-                : "This is a sample preview of your FAQ answer."}
-            </p>
+            <div
+              className="text-sm text-gray-600 mt-1 [&_p]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+              dangerouslySetInnerHTML={{
+                __html: answerText
+                  ? toDisplayHtml(newAnswer)
+                  : "This is a sample preview of your FAQ answer.",
+              }}
+            />
           </div>
         </div>
       </div>
@@ -266,7 +387,12 @@ export default function FaqManagementPage() {
                   <p className="text-sm font-semibold text-gray-800">
                     {faq.question}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">{faq.answer}</p>
+                  <div
+                    className="text-sm text-gray-600 mt-1 [&_p]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                    dangerouslySetInnerHTML={{
+                      __html: toDisplayHtml(faq.answer),
+                    }}
+                  />
                 </div>
 
                 {/* Actions */}
