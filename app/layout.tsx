@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "@/lib/server/domParserPolyfill";
 import "./globals.css";
 import { ReduxProvider } from "@/store/ReduxProvider";
 import TitleManager from "@/components/TitleManager";

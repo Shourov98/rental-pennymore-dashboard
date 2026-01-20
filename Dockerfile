@@ -1,20 +1,23 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS deps
+FROM node:20-alpine AS base
 WORKDIR /app
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ARG PNPM_VERSION=9.12.2
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+ARG NPM_REGISTRY=https://registry.npmjs.org
+ENV COREPACK_NPM_REGISTRY=$NPM_REGISTRY
+ENV NPM_CONFIG_REGISTRY=$NPM_REGISTRY
+RUN corepack enable && \
+  for i in 1 2 3; do \
+    corepack prepare pnpm@${PNPM_VERSION} --activate && break || sleep 2; \
+  done
+
+FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-FROM node:20-alpine AS builder
-WORKDIR /app
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-ARG PNPM_VERSION=9.12.2
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
