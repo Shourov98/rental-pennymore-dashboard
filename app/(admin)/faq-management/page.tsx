@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Edit } from "lucide-react";
+import {
+  Edit,
+  Eraser,
+  Link2,
+  List,
+  ListOrdered,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAppSelector } from "@/store/hooks";
 
@@ -81,9 +89,9 @@ export default function FaqManagementPage() {
       }
     }, [value]);
 
-    const applyCommand = (command: string) => {
+    const applyCommand = (command: string, value?: string) => {
       if (disabled) return;
-      document.execCommand(command);
+      document.execCommand(command, false, value);
       editorRef.current?.focus();
       onChange(editorRef.current?.innerHTML ?? "");
     };
@@ -92,48 +100,116 @@ export default function FaqManagementPage() {
       onChange(editorRef.current?.innerHTML ?? "");
     };
 
+    const handleCreateLink = () => {
+      if (disabled) return;
+      const url = window.prompt("Enter link URL");
+      if (!url) return;
+      applyCommand("createLink", url);
+    };
+
     return (
-      <div className="w-full">
-        <div className="flex flex-wrap gap-2 mb-2">
+      <div className="w-full rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 px-2 py-1.5">
           <button
             type="button"
             onClick={() => applyCommand("bold")}
             disabled={disabled}
-            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            aria-label="Bold"
+            className="h-8 min-w-8 rounded px-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            Bold
+            B
           </button>
           <button
             type="button"
             onClick={() => applyCommand("italic")}
             disabled={disabled}
-            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            aria-label="Italic"
+            className="h-8 min-w-8 rounded px-2 text-sm font-semibold italic text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            Italic
+            I
           </button>
           <button
             type="button"
             onClick={() => applyCommand("underline")}
             disabled={disabled}
-            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            aria-label="Underline"
+            className="h-8 min-w-8 rounded px-2 text-sm font-semibold underline text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            Underline
+            U
           </button>
+          <div className="h-6 w-px bg-gray-200" />
+          <button
+            type="button"
+            onClick={() => applyCommand("formatBlock", "h1")}
+            disabled={disabled}
+            aria-label="Heading 1"
+            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            H1
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("formatBlock", "h2")}
+            disabled={disabled}
+            aria-label="Heading 2"
+            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            H2
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("formatBlock", "h3")}
+            disabled={disabled}
+            aria-label="Heading 3"
+            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            H3
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("formatBlock", "p")}
+            disabled={disabled}
+            aria-label="Paragraph"
+            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            P
+          </button>
+          <div className="h-6 w-px bg-gray-200" />
           <button
             type="button"
             onClick={() => applyCommand("insertUnorderedList")}
             disabled={disabled}
-            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            aria-label="Bulleted list"
+            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            Bullets
+            <List size={16} className="mx-auto" />
           </button>
           <button
             type="button"
             onClick={() => applyCommand("insertOrderedList")}
             disabled={disabled}
-            className="px-2 py-1 text-xs rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            aria-label="Numbered list"
+            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            Numbered
+            <ListOrdered size={16} className="mx-auto" />
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateLink}
+            disabled={disabled}
+            aria-label="Insert link"
+            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Link2 size={16} className="mx-auto" />
+          </button>
+          <button
+            type="button"
+            onClick={() => applyCommand("removeFormat")}
+            disabled={disabled}
+            aria-label="Clear formatting"
+            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Eraser size={16} className="mx-auto" />
           </button>
         </div>
         <div className="relative">
@@ -146,7 +222,7 @@ export default function FaqManagementPage() {
             ref={editorRef}
             contentEditable={!disabled}
             onInput={handleInput}
-            className="min-h-[96px] w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="min-h-[96px] w-full rounded-b-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
