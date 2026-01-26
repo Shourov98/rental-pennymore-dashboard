@@ -27,6 +27,210 @@ interface FAQ {
   updatedAt: string;
 }
 
+const isProbablyHtml = (value: string) => /<\/?[a-z][\s\S]*>/i.test(value);
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const toEditorHtml = (value: string) => {
+  if (!value) return "";
+  if (isProbablyHtml(value)) return value;
+  return escapeHtml(value).replace(/\n/g, "<br>");
+};
+
+const toDisplayHtml = (value: string) => toEditorHtml(value);
+
+const getPlainText = (value: string) =>
+  value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+
+const RichTextEditor = ({
+  value,
+  onChange,
+  disabled,
+  placeholder,
+  autoFocus = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+  placeholder: string;
+  autoFocus?: boolean;
+}) => {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value;
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (!disabled && autoFocus) {
+      editorRef.current?.focus();
+    }
+  }, [autoFocus, disabled]);
+
+  const applyCommand = (command: string, value?: string) => {
+    if (disabled) return;
+    document.execCommand(command, false, value);
+    editorRef.current?.focus();
+    onChange(editorRef.current?.innerHTML ?? "");
+  };
+
+  const handleInput = () => {
+    onChange(editorRef.current?.innerHTML ?? "");
+  };
+
+  const handleCreateLink = () => {
+    if (disabled) return;
+    const url = window.prompt("Enter link URL");
+    if (!url) return;
+    applyCommand("createLink", url);
+  };
+
+  return (
+    <div className="w-full rounded-lg border border-gray-200 bg-white">
+      <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 px-2 py-1.5">
+        <button
+          type="button"
+          onClick={() => applyCommand("bold")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Bold"
+          className="h-8 min-w-8 rounded px-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          B
+        </button>
+        <button
+          type="button"
+          onClick={() => applyCommand("italic")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Italic"
+          className="h-8 min-w-8 rounded px-2 text-sm font-semibold italic text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          I
+        </button>
+        <button
+          type="button"
+          onClick={() => applyCommand("underline")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Underline"
+          className="h-8 min-w-8 rounded px-2 text-sm font-semibold underline text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          U
+        </button>
+        <div className="h-6 w-px bg-gray-200" />
+        <button
+          type="button"
+          onClick={() => applyCommand("formatBlock", "h1")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Heading 1"
+          className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          H1
+        </button>
+        <button
+          type="button"
+          onClick={() => applyCommand("formatBlock", "h2")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Heading 2"
+          className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          H2
+        </button>
+        <button
+          type="button"
+          onClick={() => applyCommand("formatBlock", "h3")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Heading 3"
+          className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          H3
+        </button>
+        <button
+          type="button"
+          onClick={() => applyCommand("formatBlock", "p")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Paragraph"
+          className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          P
+        </button>
+        <div className="h-6 w-px bg-gray-200" />
+        <button
+          type="button"
+          onClick={() => applyCommand("insertUnorderedList")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Bulleted list"
+          className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <List size={16} className="mx-auto" />
+        </button>
+        <button
+          type="button"
+          onClick={() => applyCommand("insertOrderedList")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Numbered list"
+          className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <ListOrdered size={16} className="mx-auto" />
+        </button>
+        <button
+          type="button"
+          onClick={handleCreateLink}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Insert link"
+          className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <Link2 size={16} className="mx-auto" />
+        </button>
+        <button
+          type="button"
+          onClick={() => applyCommand("removeFormat")}
+          onMouseDown={(event) => event.preventDefault()}
+          disabled={disabled}
+          aria-label="Clear formatting"
+          className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <Eraser size={16} className="mx-auto" />
+        </button>
+      </div>
+      <div className="relative">
+        {getPlainText(value) === "" ? (
+          <span className="absolute left-3 top-2 text-sm text-gray-400 pointer-events-none">
+            {placeholder}
+          </span>
+        ) : null}
+        <div
+          ref={editorRef}
+          contentEditable={!disabled}
+          onInput={handleInput}
+          className="min-h-[120px] w-full cursor-text rounded-b-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 [&_ul]:list-disc [&_ul]:list-inside [&_ol]:list-decimal [&_ol]:list-inside [&_li]:my-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold"
+        />
+      </div>
+    </div>
+  );
+};
+
 export default function FaqManagementPage() {
   const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -41,212 +245,7 @@ export default function FaqManagementPage() {
   const [editOrder, setEditOrder] = useState<number | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
 
-  const isProbablyHtml = (value: string) =>
-    /<\/?[a-z][\s\S]*>/i.test(value);
-
-  const escapeHtml = (value: string) =>
-    value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-
-  const toEditorHtml = (value: string) => {
-    if (!value) return "";
-    if (isProbablyHtml(value)) return value;
-    return escapeHtml(value).replace(/\n/g, "<br>");
-  };
-
-  const toDisplayHtml = (value: string) => toEditorHtml(value);
-
-  const getPlainText = (value: string) =>
-    value
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(p|div)>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/&nbsp;/g, " ")
-      .trim();
-
   const answerText = getPlainText(newAnswer);
-
-  const RichTextEditor = ({
-    value,
-    onChange,
-    disabled,
-    placeholder,
-    autoFocus = false,
-  }: {
-    value: string;
-    onChange: (value: string) => void;
-    disabled: boolean;
-    placeholder: string;
-    autoFocus?: boolean;
-  }) => {
-    const editorRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-      if (editorRef.current && editorRef.current.innerHTML !== value) {
-        editorRef.current.innerHTML = value;
-      }
-    }, [value]);
-
-    useEffect(() => {
-      if (!disabled && autoFocus) {
-        editorRef.current?.focus();
-      }
-    }, [autoFocus, disabled]);
-
-    const applyCommand = (command: string, value?: string) => {
-      if (disabled) return;
-      document.execCommand(command, false, value);
-      editorRef.current?.focus();
-      onChange(editorRef.current?.innerHTML ?? "");
-    };
-
-    const handleInput = () => {
-      onChange(editorRef.current?.innerHTML ?? "");
-    };
-
-    const handleCreateLink = () => {
-      if (disabled) return;
-      const url = window.prompt("Enter link URL");
-      if (!url) return;
-      applyCommand("createLink", url);
-    };
-
-    return (
-      <div className="w-full rounded-lg border border-gray-200 bg-white">
-        <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 px-2 py-1.5">
-          <button
-            type="button"
-            onClick={() => applyCommand("bold")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Bold"
-            className="h-8 min-w-8 rounded px-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            B
-          </button>
-          <button
-            type="button"
-            onClick={() => applyCommand("italic")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Italic"
-            className="h-8 min-w-8 rounded px-2 text-sm font-semibold italic text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            I
-          </button>
-          <button
-            type="button"
-            onClick={() => applyCommand("underline")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Underline"
-            className="h-8 min-w-8 rounded px-2 text-sm font-semibold underline text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            U
-          </button>
-          <div className="h-6 w-px bg-gray-200" />
-          <button
-            type="button"
-            onClick={() => applyCommand("formatBlock", "h1")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Heading 1"
-            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            H1
-          </button>
-          <button
-            type="button"
-            onClick={() => applyCommand("formatBlock", "h2")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Heading 2"
-            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            H2
-          </button>
-          <button
-            type="button"
-            onClick={() => applyCommand("formatBlock", "h3")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Heading 3"
-            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            H3
-          </button>
-          <button
-            type="button"
-            onClick={() => applyCommand("formatBlock", "p")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Paragraph"
-            className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            P
-          </button>
-          <div className="h-6 w-px bg-gray-200" />
-          <button
-            type="button"
-            onClick={() => applyCommand("insertUnorderedList")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Bulleted list"
-            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <List size={16} className="mx-auto" />
-          </button>
-          <button
-            type="button"
-            onClick={() => applyCommand("insertOrderedList")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Numbered list"
-            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <ListOrdered size={16} className="mx-auto" />
-          </button>
-          <button
-            type="button"
-            onClick={handleCreateLink}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Insert link"
-            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <Link2 size={16} className="mx-auto" />
-          </button>
-          <button
-            type="button"
-            onClick={() => applyCommand("removeFormat")}
-            onMouseDown={(event) => event.preventDefault()}
-            disabled={disabled}
-            aria-label="Clear formatting"
-            className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <Eraser size={16} className="mx-auto" />
-          </button>
-        </div>
-        <div className="relative">
-          {getPlainText(value) === "" ? (
-            <span className="absolute left-3 top-2 text-sm text-gray-400 pointer-events-none">
-              {placeholder}
-            </span>
-          ) : null}
-          <div
-            ref={editorRef}
-            contentEditable={!disabled}
-            onInput={handleInput}
-            className="min-h-[120px] w-full rounded-b-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold"
-          />
-        </div>
-      </div>
-    );
-  };
 
   const fetchFaqs = useCallback(async () => {
     try {
@@ -455,7 +454,7 @@ export default function FaqManagementPage() {
                 : "Sample: What is BeforeListed?"}
             </p>
             <div
-              className="text-sm text-gray-600 mt-1 [&_p]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+              className="text-sm text-gray-600 mt-1 [&_p]:mt-1 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:pl-5"
               dangerouslySetInnerHTML={{
                 __html: answerText
                   ? toDisplayHtml(newAnswer)
@@ -484,7 +483,7 @@ export default function FaqManagementPage() {
                     {faq.question}
                   </p>
                   <div
-                    className="text-sm text-gray-600 mt-1 [&_p]:mt-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                    className="text-sm text-gray-600 mt-1 [&_p]:mt-1 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:pl-5"
                     dangerouslySetInnerHTML={{
                       __html: toDisplayHtml(faq.answer),
                     }}
