@@ -75,11 +75,13 @@ export default function FaqManagementPage() {
     onChange,
     disabled,
     placeholder,
+    autoFocus = false,
   }: {
     value: string;
     onChange: (value: string) => void;
     disabled: boolean;
     placeholder: string;
+    autoFocus?: boolean;
   }) => {
     const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -88,6 +90,12 @@ export default function FaqManagementPage() {
         editorRef.current.innerHTML = value;
       }
     }, [value]);
+
+    useEffect(() => {
+      if (!disabled && autoFocus) {
+        editorRef.current?.focus();
+      }
+    }, [autoFocus, disabled]);
 
     const applyCommand = (command: string, value?: string) => {
       if (disabled) return;
@@ -113,6 +121,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("bold")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Bold"
             className="h-8 min-w-8 rounded px-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -122,6 +131,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("italic")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Italic"
             className="h-8 min-w-8 rounded px-2 text-sm font-semibold italic text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -131,6 +141,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("underline")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Underline"
             className="h-8 min-w-8 rounded px-2 text-sm font-semibold underline text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -141,6 +152,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("formatBlock", "h1")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Heading 1"
             className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -150,6 +162,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("formatBlock", "h2")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Heading 2"
             className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -159,6 +172,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("formatBlock", "h3")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Heading 3"
             className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -168,6 +182,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("formatBlock", "p")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Paragraph"
             className="h-8 min-w-8 rounded px-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -178,6 +193,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("insertUnorderedList")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Bulleted list"
             className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -187,6 +203,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("insertOrderedList")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Numbered list"
             className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -196,6 +213,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={handleCreateLink}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Insert link"
             className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -205,6 +223,7 @@ export default function FaqManagementPage() {
           <button
             type="button"
             onClick={() => applyCommand("removeFormat")}
+            onMouseDown={(event) => event.preventDefault()}
             disabled={disabled}
             aria-label="Clear formatting"
             className="h-8 w-8 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -222,7 +241,7 @@ export default function FaqManagementPage() {
             ref={editorRef}
             contentEditable={!disabled}
             onInput={handleInput}
-            className="min-h-[96px] w-full rounded-b-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="min-h-[120px] w-full rounded-b-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold"
           />
         </div>
       </div>
@@ -409,6 +428,7 @@ export default function FaqManagementPage() {
             onChange={setNewAnswer}
             placeholder="Enter answer"
             disabled={isBusy}
+            autoFocus
           />
         </div>
 
