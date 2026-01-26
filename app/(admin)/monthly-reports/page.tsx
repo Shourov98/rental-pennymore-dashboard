@@ -71,7 +71,10 @@ export default function ReportListPage() {
   }, [accessToken]);
 
   const monthLabel = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat("en-US", { month: "short" });
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      timeZone: "UTC",
+    });
     return (month: string, year: number) => {
       const monthNumber = Number.parseInt(month, 10);
       if (!Number.isFinite(monthNumber) || monthNumber < 1 || monthNumber > 12) {
