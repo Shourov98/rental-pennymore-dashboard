@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, Eye, Trash2 } from "lucide-react";
 import FilterModal, { type FilterType } from "@/components/modals/FilterModals";
 import { useRouter } from "next/navigation";
@@ -10,15 +10,21 @@ import {
   selectAdminRequests,
   type AdminRequest,
 } from "@/store/adminRequestsSlice";
+import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 export default function RenterConnectionPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const { items, status, error, pagination } =
     useAppSelector(selectAdminRequests);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteTarget, setDeleteTarget] = useState<AdminRequest | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteModalRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState<FilterType>({
     borough: null,
@@ -31,8 +37,6 @@ export default function RenterConnectionPage() {
   useEffect(() => {
     dispatch(fetchAdminRequests({ page: currentPage }));
   }, [currentPage, dispatch]);
-
-  console.log(items);
 
   const filteredData = useMemo(() => {
     let results = items;
@@ -115,6 +119,67 @@ export default function RenterConnectionPage() {
     }
   };
 
+  const closeDeleteModal = () => {
+    if (isDeleting) return;
+    setDeleteTarget(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const tokenFromStorage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
+      const token = accessToken || tokenFromStorage;
+      await apiClient.delete(
+        `/pre-market/admin/requests/${deleteTarget._id}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+      setDeleteTarget(null);
+      dispatch(fetchAdminRequests({ page: currentPage }));
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Unable to delete this request."
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!deleteTarget) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        deleteModalRef.current &&
+        !deleteModalRef.current.contains(e.target as Node)
+      ) {
+        closeDeleteModal();
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeDeleteModal();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [deleteTarget, isDeleting]);
+
+  const isInitialLoading = status === "loading" && items.length === 0;
+
   return (
     <section className="w-full min-h-screen bg-[#F8F9FB] px-4 md:px-8 py-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
@@ -152,7 +217,7 @@ export default function RenterConnectionPage() {
             </thead>
 
             <tbody>
-              {status === "loading" ? (
+              {isInitialLoading ? (
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-gray-600"
@@ -224,7 +289,13 @@ export default function RenterConnectionPage() {
                             <Eye size={16} className="text-gray-800" />
                           </button>
 
-                          <button className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition">
+                          <button
+                            onClick={() => {
+                              setDeleteTarget(item);
+                              setDeleteError(null);
+                            }}
+                            className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
+                          >
                             <Trash2 size={16} className="text-red-500" />
                           </button>
                         </div>
@@ -245,14 +316,14 @@ export default function RenterConnectionPage() {
         <div className="flex gap-2">
           <button
             onClick={handlePrev}
-            disabled={!hasPrev || status === "loading"}
+            disabled={!hasPrev || isInitialLoading}
             className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
           >
             Previous
           </button>
           <button
             onClick={handleNext}
-            disabled={!hasNext || status === "loading"}
+            disabled={!hasNext || isInitialLoading}
             className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
           >
             Next
@@ -265,6 +336,49 @@ export default function RenterConnectionPage() {
         onClose={() => setIsFilterOpen(false)}
         onApply={setFilters}
       />
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div
+            ref={deleteModalRef}
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
+          >
+            <h2 className="text-lg font-semibold text-gray-900">
+              Delete Request?
+            </h2>
+            <p className="text-sm text-gray-600 mt-2">
+              This will permanently delete the request{" "}
+              <span className="font-medium text-gray-800">
+                {deleteTarget.requestName || "Unnamed request"}
+              </span>
+              . This action cannot be undone.
+            </p>
+
+            {deleteError && (
+              <div className="mt-4 text-sm text-red-600" role="alert">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="px-4 py-2 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-60"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
