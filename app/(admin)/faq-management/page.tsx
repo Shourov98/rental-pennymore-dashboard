@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   Edit,
   Eraser,
@@ -44,6 +44,7 @@ const sanitizeHtml = (value: string) => {
   const allowedTags = new Set([
     "a",
     "b",
+    "body",
     "br",
     "div",
     "em",
@@ -65,6 +66,7 @@ const sanitizeHtml = (value: string) => {
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(value, "text/html");
+  if (!doc.body) return "";
 
   const sanitizeNode = (node: Node) => {
     if (node.nodeType === Node.COMMENT_NODE) {
@@ -114,7 +116,7 @@ const sanitizeHtml = (value: string) => {
   };
 
   sanitizeNode(doc.body);
-  return doc.body.innerHTML;
+  return doc.body.innerHTML ?? "";
 };
 
 const toEditorHtml = (value: string) => {
@@ -147,9 +149,7 @@ const RichTextEditor = ({
   autoFocus?: boolean;
 }) => {
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const editorId = useRef(
-    `faq-editor-${Math.random().toString(36).slice(2, 9)}`
-  );
+  const editorId = useId();
 
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
@@ -200,7 +200,7 @@ const RichTextEditor = ({
       <div
         className="flex flex-wrap items-center gap-1 border-b border-gray-200 px-2 py-1.5"
         role="toolbar"
-        aria-controls={editorId.current}
+        aria-controls={editorId}
         aria-label="FAQ editor toolbar"
       >
         <button
@@ -323,7 +323,7 @@ const RichTextEditor = ({
           </span>
         ) : null}
         <div
-          id={editorId.current}
+          id={editorId}
           ref={editorRef}
           contentEditable={!disabled}
           onInput={handleInput}
@@ -376,7 +376,10 @@ export default function FaqManagementPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
-      setFaqs(response.data.data);
+      const nextFaqs = Array.isArray(response.data.data)
+        ? response.data.data
+        : [];
+      setFaqs(nextFaqs);
       setStatus("idle");
     } catch (err) {
       setStatus("failed");
