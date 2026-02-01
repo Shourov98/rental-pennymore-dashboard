@@ -540,7 +540,7 @@ export default function FaqManagementPage() {
             onChange={setNewAnswer}
             placeholder="Enter answer"
             disabled={isBusy}
-            autoFocus
+            autoFocus={!editId}
           />
         </div>
 
