@@ -37,13 +37,93 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+const sanitizeHtml = (value: string) => {
+  if (!value) return "";
+  if (typeof window === "undefined") return value;
+
+  const allowedTags = new Set([
+    "a",
+    "b",
+    "br",
+    "div",
+    "em",
+    "h1",
+    "h2",
+    "h3",
+    "i",
+    "li",
+    "ol",
+    "p",
+    "strong",
+    "u",
+    "ul",
+    "span",
+  ]);
+  const allowedAttributes: Record<string, Set<string>> = {
+    a: new Set(["href", "rel", "target"]),
+  };
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(value, "text/html");
+
+  const sanitizeNode = (node: Node) => {
+    if (node.nodeType === Node.COMMENT_NODE) {
+      node.parentNode?.removeChild(node);
+      return;
+    }
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      const tagName = element.tagName.toLowerCase();
+
+      if (!allowedTags.has(tagName)) {
+        const parent = element.parentNode;
+        if (parent) {
+          while (element.firstChild) {
+            parent.insertBefore(element.firstChild, element);
+          }
+          parent.removeChild(element);
+        } else {
+          element.remove();
+        }
+        return;
+      }
+
+      [...element.attributes].forEach((attr) => {
+        const attrName = attr.name.toLowerCase();
+        const allowedForTag = allowedAttributes[tagName];
+        if (!allowedForTag?.has(attrName)) {
+          element.removeAttribute(attr.name);
+          return;
+        }
+        if (tagName === "a" && attrName === "href") {
+          const href = attr.value.trim();
+          if (!/^(https?:|mailto:|tel:)/i.test(href)) {
+            element.removeAttribute(attr.name);
+          }
+        }
+      });
+
+      if (tagName === "a") {
+        element.setAttribute("rel", "noopener noreferrer");
+        element.setAttribute("target", "_blank");
+      }
+    }
+
+    [...node.childNodes].forEach(sanitizeNode);
+  };
+
+  sanitizeNode(doc.body);
+  return doc.body.innerHTML;
+};
+
 const toEditorHtml = (value: string) => {
   if (!value) return "";
   if (isProbablyHtml(value)) return value;
   return escapeHtml(value).replace(/\n/g, "<br>");
 };
 
-const toDisplayHtml = (value: string) => toEditorHtml(value);
+const toDisplayHtml = (value: string) => sanitizeHtml(toEditorHtml(value));
 
 const getPlainText = (value: string) =>
   value
@@ -67,6 +147,9 @@ const RichTextEditor = ({
   autoFocus?: boolean;
 }) => {
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const editorId = useRef(
+    `faq-editor-${Math.random().toString(36).slice(2, 9)}`
+  );
 
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
@@ -98,9 +181,28 @@ const RichTextEditor = ({
     applyCommand("createLink", url);
   };
 
+  const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    event.preventDefault();
+    const clipboard = event.clipboardData;
+    const html = clipboard.getData("text/html");
+    const text = clipboard.getData("text/plain");
+    const content = html
+      ? sanitizeHtml(html)
+      : escapeHtml(text).replace(/\n/g, "<br>");
+
+    document.execCommand("insertHTML", false, content);
+    onChange(editorRef.current?.innerHTML ?? "");
+  };
+
   return (
     <div className="w-full rounded-lg border border-gray-200 bg-white">
-      <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 px-2 py-1.5">
+      <div
+        className="flex flex-wrap items-center gap-1 border-b border-gray-200 px-2 py-1.5"
+        role="toolbar"
+        aria-controls={editorId.current}
+        aria-label="FAQ editor toolbar"
+      >
         <button
           type="button"
           onClick={() => applyCommand("bold")}
@@ -221,9 +323,17 @@ const RichTextEditor = ({
           </span>
         ) : null}
         <div
+          id={editorId.current}
           ref={editorRef}
           contentEditable={!disabled}
           onInput={handleInput}
+          onPaste={handlePaste}
+          role="textbox"
+          aria-multiline="true"
+          aria-label={placeholder}
+          aria-disabled={disabled}
+          aria-placeholder={placeholder}
+          spellCheck
           className="min-h-[120px] w-full cursor-text rounded-b-lg bg-gray-50 px-3 py-2 text-sm text-gray-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 [&_ul]:list-disc [&_ul]:list-inside [&_ol]:list-decimal [&_ol]:list-inside [&_li]:my-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold"
         />
       </div>
@@ -305,7 +415,7 @@ export default function FaqManagementPage() {
 
       const payload = {
         question: newQuestion.trim(),
-        answer: newAnswer.trim(),
+        answer: sanitizeHtml(newAnswer.trim()),
         category: "Account",
         order:
           editId && editOrder !== null
@@ -336,7 +446,7 @@ export default function FaqManagementPage() {
   const startEditing = (faq: FAQ) => {
     setEditId(faq._id);
     setNewQuestion(faq.question);
-    setNewAnswer(toEditorHtml(faq.answer));
+    setNewAnswer(toEditorHtml(sanitizeHtml(faq.answer)));
     setEditOrder(faq.order);
     setSaveStatus("idle");
     setError(null);
