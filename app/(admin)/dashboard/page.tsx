@@ -22,7 +22,7 @@ type MonthlyIncomeResponse = {
 export default function AdminDashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
-  const { user, accessToken } = useAppSelector(selectAuth);
+  const { user } = useAppSelector(selectAuth);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return String(now.getMonth() + 1);
@@ -77,18 +77,9 @@ export default function AdminDashboard() {
       try {
         setIncomeStatus("loading");
         setIncomeError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<MonthlyIncomeResponse>(
-          `/grant-access/admin/income/monthly/${selectedYear}/${selectedMonth}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }
-        );
+          `/grant-access/admin/income/monthly/${selectedYear}/${selectedMonth}`);
 
         if (!isMounted) return;
         setMonthlyIncome(response.data.data);
@@ -107,7 +98,7 @@ export default function AdminDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear]);
 
   const months = [
     { value: "1", label: "January" },

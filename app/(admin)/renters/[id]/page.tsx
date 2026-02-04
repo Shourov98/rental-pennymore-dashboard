@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import RequestCard from "@/components/RequestCard";
 import RenterContactCard from "@/components/RenterContactCard";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type Listing = {
   _id: string;
@@ -63,7 +62,6 @@ type RenterResponse = {
 export default function RenterDetailsPage() {
   const router = useRouter();
   const { id: renterId } = useParams<{ id: string }>();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [renter, setRenter] = useState<RenterDetails | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -75,18 +73,9 @@ export default function RenterDetailsPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<RenterResponse>(
-          `/renter/admin/renters/${renterId}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }
-        );
+          `/renter/admin/renters/${renterId}`);
 
         if (!isMounted) return;
         setRenter(response.data.data);
@@ -107,7 +96,7 @@ export default function RenterDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, renterId]);
+  }, [renterId]);
 
   const mapDateRange = (listing?: Listing) => {
     const earliest = listing?.movingDateRange?.earliest;

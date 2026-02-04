@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, User, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type ProfileData = {
   fullName?: string;
@@ -31,7 +30,6 @@ type UploadResponse = {
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [image, setImage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [fullName, setFullName] = useState("");
@@ -69,15 +67,8 @@ export default function EditProfilePage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
-        const response = await apiClient.get<ProfileResponse>("/user/profile", {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
+        const response = await apiClient.get<ProfileResponse>("/user/profile");
 
         if (!isMounted) return;
         setFullName(response.data.data.fullName ?? "");
@@ -100,7 +91,7 @@ export default function EditProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken]);
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,11 +106,6 @@ export default function EditProfilePage() {
     try {
       setIsSaving(true);
       setError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       if (imageFile) {
         const formData = new FormData();
@@ -129,7 +115,6 @@ export default function EditProfilePage() {
           formData,
           {
             headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
               "Content-Type": "multipart/form-data",
             },
           }
@@ -147,11 +132,7 @@ export default function EditProfilePage() {
         {
           fullName,
           phoneNumber,
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        });
 
       router.push("/profile");
     } catch (err) {

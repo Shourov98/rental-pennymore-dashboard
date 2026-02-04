@@ -5,7 +5,6 @@ import { ArrowLeft, Link } from "lucide-react";
 import { useState } from "react";
 import ReportDateSelector from "@/components/ReportDateSelector";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 const monthNames = [
   "January",
@@ -24,7 +23,6 @@ const monthNames = [
 
 export default function ReportAddPage() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [link, setLink] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
@@ -35,11 +33,6 @@ export default function ReportAddPage() {
     try {
       setIsSaving(true);
       setError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
       const monthIndex = monthNames.indexOf(month) + 1;
 
       await apiClient.post(
@@ -48,11 +41,7 @@ export default function ReportAddPage() {
           link,
           month: monthIndex,
           year: Number(year),
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        });
 
       router.push("/monthly-reports");
     } catch (err) {

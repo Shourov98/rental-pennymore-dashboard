@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import RenterPreferenceForm from "@/components/RenterPreferenceForm";
 import RenterContactCard from "@/components/RenterContactCard";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type RequestDetails = {
   _id: string;
@@ -76,7 +75,6 @@ type RequestDetailsResponse = {
 
 export default function RequestDetailsPage() {
   const { requestId } = useParams<{ requestId: string }>();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [request, setRequest] = useState<RequestDetails | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -88,17 +86,9 @@ export default function RequestDetailsPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<RequestDetailsResponse>(
-          `/pre-market/admin/requests/${requestId}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
+          `/pre-market/admin/requests/${requestId}`
         );
 
         if (!isMounted) return;
@@ -120,7 +110,7 @@ export default function RequestDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, requestId]);
+  }, [requestId]);
 
   const renter = request?.renterInfo;
   const renterName = renter?.fullName ?? "-";

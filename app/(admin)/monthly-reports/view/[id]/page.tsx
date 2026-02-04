@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Edit2, Trash2 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type Report = {
   _id: string;
@@ -23,7 +22,6 @@ type ReportsResponse = {
 export default function ReportViewPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [report, setReport] = useState<Report | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -39,18 +37,9 @@ export default function ReportViewPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<ReportsResponse>(
-          "/monthly-reports/admin/all",
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }
-        );
+          "/monthly-reports/admin/all");
         const selected = response.data.data.find(
           (item) => item._id === reportId
         );
@@ -74,7 +63,7 @@ export default function ReportViewPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, reportId]);
+  }, [reportId]);
 
   const monthLabel = useMemo(() => {
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -95,14 +84,7 @@ export default function ReportViewPage() {
     if (!reportId) return;
     try {
       setIsDeleting(true);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
-      await apiClient.delete(`/monthly-reports/admin/${reportId}/hard-delete`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
+      await apiClient.delete(`/monthly-reports/admin/${reportId}/hard-delete`);
       router.push("/monthly-reports");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to delete report.");

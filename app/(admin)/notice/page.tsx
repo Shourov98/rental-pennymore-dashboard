@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type NoticeResponse = {
   success: boolean;
@@ -26,7 +25,6 @@ export default function NoticePage() {
     "idle" | "saving" | "succeeded" | "failed"
   >("idle");
   const [error, setError] = useState<string | null>(null);
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,15 +33,8 @@ export default function NoticePage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
-        const response = await apiClient.get<NoticeResponse>("/notice/admin", {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
+        const response = await apiClient.get<NoticeResponse>("/notice/admin");
 
         if (!isMounted) return;
         setText(response.data.data.content ?? "");
@@ -61,7 +52,7 @@ export default function NoticePage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken]);
+  }, []);
 
   const handleCancel = () => {
     setText(initialText);
@@ -73,19 +64,10 @@ export default function NoticePage() {
     try {
       setSaveStatus("saving");
       setError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       const response = await apiClient.put<NoticeResponse>(
         "/notice/admin",
-        { content: text.trim() },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        { content: text.trim() });
 
       setText(response.data.data.content ?? text.trim());
       setInitialText(response.data.data.content ?? text.trim());

@@ -11,7 +11,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 interface FAQ {
   _id: string;
@@ -342,7 +341,6 @@ const RichTextEditor = ({
 };
 
 export default function FaqManagementPage() {
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [saveStatus, setSaveStatus] = useState<
@@ -361,20 +359,13 @@ export default function FaqManagementPage() {
     try {
       setStatus("loading");
       setError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       const response = await apiClient.get<{
         success: boolean;
         statusCode: number;
         message: string;
         data: FAQ[];
-      }>("/faq/admin/all", {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
+      }>("/faq/admin/all");
 
       const nextFaqs = Array.isArray(response.data.data)
         ? response.data.data
@@ -385,7 +376,7 @@ export default function FaqManagementPage() {
       setStatus("failed");
       setError(err instanceof Error ? err.message : "Unable to load FAQs.");
     }
-  }, [accessToken]);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -410,11 +401,6 @@ export default function FaqManagementPage() {
     try {
       setSaveStatus("saving");
       setError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       const payload = {
         question: newQuestion.trim(),
@@ -428,13 +414,9 @@ export default function FaqManagementPage() {
       };
 
       if (editId) {
-        await apiClient.put(`/faq/admin/${editId}`, payload, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
+        await apiClient.put(`/faq/admin/${editId}`, payload);
       } else {
-        await apiClient.post("/faq/admin", payload, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
+        await apiClient.post("/faq/admin", payload);
       }
 
       await fetchFaqs();
@@ -459,15 +441,8 @@ export default function FaqManagementPage() {
     try {
       setSaveStatus("saving");
       setError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
-      await apiClient.delete(`/faq/admin/${id}/hard-delete`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
+      await apiClient.delete(`/faq/admin/${id}/hard-delete`);
 
       await fetchFaqs();
       setSaveStatus("succeeded");

@@ -9,8 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import RenterContactCard from "@/components/RenterContactCard";
 import RenterPreferenceForm from "@/components/RenterPreferenceForm";
 import { apiClient } from "@/lib/apiClient";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { selectAuth } from "@/store/auth/authSlice";
+import { useAppDispatch } from "@/store/hooks";
 import { setCurrentRequest } from "@/store/renterConnectionSlice";
 import type { RenterRequestDetail } from "@/store/renterConnectionSlice";
 
@@ -62,7 +61,6 @@ export default function RenterConnectionDetailsPage() {
   >("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const { accessToken } = useAppSelector(selectAuth);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const params = useParams();
@@ -78,21 +76,11 @@ export default function RenterConnectionDetailsPage() {
       setError(null);
 
       try {
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<RequestDetailResponse>(
           `/pre-market/admin/requests/${id}`,
           {
             signal,
-            headers: token
-              ? {
-                  Authorization: `Bearer ${token}`,
-                }
-              : undefined,
           }
         );
 
@@ -109,7 +97,7 @@ export default function RenterConnectionDetailsPage() {
         }
       }
     },
-    [accessToken, dispatch, id]
+    [dispatch, id]
   );
 
   useEffect(() => {

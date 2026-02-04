@@ -15,7 +15,6 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 export default function RenterConnectionPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const { items, status, error, pagination } =
     useAppSelector(selectAdminRequests);
 
@@ -129,17 +128,8 @@ export default function RenterConnectionPage() {
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
       await apiClient.delete(
-        `/pre-market/admin/requests/${deleteTarget._id}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        `/pre-market/admin/requests/${deleteTarget._id}`);
       setDeleteTarget(null);
       dispatch(fetchAdminRequests({ page: currentPage }));
     } catch (err) {

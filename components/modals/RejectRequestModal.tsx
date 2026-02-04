@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 interface RejectRequestModalProps {
   isOpen: boolean;
@@ -22,8 +21,6 @@ export function RejectRequestModal({
   const [notes, setNotes] = useState("Credentials don't meet requirements");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { accessToken } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -54,22 +51,10 @@ export function RejectRequestModal({
     setError(null);
 
     try {
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       await apiClient.post(
         `/pre-market/grant-access/admin/${requestId}/reject`,
-        { notes: notes || "Credentials don't meet requirements" },
-        {
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : undefined,
-        }
+        { notes: notes || "Credentials don't meet requirements" }
       );
 
       onSuccess?.();

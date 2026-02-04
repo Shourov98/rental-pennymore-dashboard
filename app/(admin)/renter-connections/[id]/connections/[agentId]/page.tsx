@@ -14,7 +14,6 @@ import AgentContactCard from "@/components/AgentContactCard";
 import RenterContactCard from "@/components/RenterContactCard";
 import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { selectAuth } from "@/store/auth/authSlice";
 import {
   setCurrentRequest,
   type RenterRequestDetail,
@@ -31,7 +30,6 @@ export default function AgentConnectionViewPage() {
   const router = useRouter();
   const params = useParams<{ id: string; agentId: string }>();
   const dispatch = useAppDispatch();
-  const { accessToken } = useAppSelector(selectAuth);
   const currentRequest = useAppSelector(
     (state) => state.renterConnection.currentRequest
   );
@@ -59,21 +57,11 @@ export default function AgentConnectionViewPage() {
       setError(null);
 
       try {
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<{
           data: RenterRequestDetail;
         }>(`/pre-market/admin/requests/${requestId}`, {
           signal,
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : undefined,
         });
 
         setRequest(response.data.data);
@@ -89,7 +77,7 @@ export default function AgentConnectionViewPage() {
         }
       }
     },
-    [accessToken, dispatch, requestId]
+    [dispatch, requestId]
   );
 
   useEffect(() => {

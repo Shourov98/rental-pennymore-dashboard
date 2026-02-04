@@ -9,6 +9,18 @@ export const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
+});
+
+apiClient.interceptors.request.use((config) => {
+  if (typeof window === "undefined") return config;
+  const accessToken = localStorage.getItem("accessToken");
+  if (!accessToken) return config;
+  config.headers = config.headers ?? {};
+  if (!("Authorization" in config.headers)) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
 });
 
 type RefreshTokenResponse = {
@@ -16,7 +28,6 @@ type RefreshTokenResponse = {
   message: string;
   data: {
     accessToken: string;
-    refreshToken?: string;
     expiresIn?: string;
   };
   timestamp: string;
@@ -41,26 +52,19 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) {
-      return Promise.reject(error);
-    }
-
     originalRequest._retry = true;
 
     try {
       const response = await axios.post<RefreshTokenResponse>(
         `${BASE_URL}/auth/refresh-token`,
-        { refreshToken },
+        null,
         {
           headers: { "Content-Type": "application/json" },
+          withCredentials: true,
         },
       );
 
       localStorage.setItem("accessToken", response.data.data.accessToken);
-      if (response.data.data.refreshToken) {
-        localStorage.setItem("refreshToken", response.data.data.refreshToken);
-      }
 
       originalRequest.headers = originalRequest.headers ?? {};
       originalRequest.headers.Authorization = `Bearer ${response.data.data.accessToken}`;

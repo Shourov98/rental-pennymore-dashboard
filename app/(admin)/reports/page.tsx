@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Download } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type PreMarketExcelResponse = {
   success: boolean;
@@ -27,7 +26,6 @@ export default function ReportListPage() {
   const [requestMatchError, setRequestMatchError] = useState<string | null>(
     null
   );
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const downloadFile = (url: string) => {
     // Trigger browser download
@@ -44,18 +42,8 @@ export default function ReportListPage() {
       setPreMarketStatus("loading");
       setPreMarketError(null);
 
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
-
       const response = await apiClient.get<PreMarketExcelResponse>(
-        "/pre-market/admin/excel-download",
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        "/pre-market/admin/excel-download");
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
       if (!downloadUrl) {
@@ -77,18 +65,8 @@ export default function ReportListPage() {
       setRequestMatchStatus("loading");
       setRequestMatchError(null);
 
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
-
       const response = await apiClient.get<PreMarketExcelResponse>(
-        "/pre-market/admin/excel-renter-listings",
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        "/pre-market/admin/excel-renter-listings");
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
       if (!downloadUrl) {

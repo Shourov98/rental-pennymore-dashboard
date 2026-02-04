@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Trash2 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type NotificationItem = {
   _id: string;
@@ -46,7 +45,6 @@ type UnreadCountResponse = {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
@@ -54,11 +52,6 @@ export default function NotificationsPage() {
   const [actionStatus, setActionStatus] = useState<
     "idle" | "processing" | "failed"
   >("idle");
-
-  const token = useMemo(() => {
-    if (typeof window === "undefined") return accessToken ?? null;
-    return accessToken || localStorage.getItem("accessToken");
-  }, [accessToken]);
 
   useEffect(() => {
     let isMounted = true;
@@ -69,12 +62,8 @@ export default function NotificationsPage() {
         setError(null);
 
         const [notificationsResponse, unreadResponse] = await Promise.all([
-          apiClient.get<NotificationsResponse>("/notifications/user", {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }),
-          apiClient.get<UnreadCountResponse>("/notifications/unread-count", {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }),
+          apiClient.get<NotificationsResponse>("/notifications/user"),
+          apiClient.get<UnreadCountResponse>("/notifications/unread-count"),
         ]);
 
         if (!isMounted) return;
@@ -95,7 +84,7 @@ export default function NotificationsPage() {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, []);
 
   const formatTimestamp = (value: string) => {
     const date = new Date(value);
@@ -135,11 +124,7 @@ export default function NotificationsPage() {
       setError(null);
       await apiClient.patch(
         "/notifications/read-all",
-        {},
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        {});
 
       setNotifications((prev) =>
         prev.map((notification) => ({ ...notification, isRead: true }))
@@ -167,11 +152,7 @@ export default function NotificationsPage() {
       setError(null);
       await apiClient.patch(
         `/notifications/${notification._id}/read`,
-        {},
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        {});
 
       setNotifications((prev) =>
         prev.map((item) =>
@@ -196,9 +177,7 @@ export default function NotificationsPage() {
     try {
       setActionStatus("processing");
       setError(null);
-      await apiClient.delete(`/notifications/${notificationId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
+      await apiClient.delete(`/notifications/${notificationId}`);
 
       setNotifications((prev) =>
         prev.filter((item) => item._id !== notificationId)

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { X, DollarSign } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 interface PaymentCheckModalProps {
   isOpen: boolean;
@@ -26,8 +25,6 @@ export function PaymentCheckModal({
   const [notes, setNotes] = useState("Approved");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const { accessToken } = useAppSelector((state) => state.auth);
 
   // close when clicking outside
   useEffect(() => {
@@ -97,11 +94,6 @@ export function PaymentCheckModal({
     setError(null);
 
     try {
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       const isFree = selectedOption === "free" || chargeAmount <= 0;
       const baseUrl = `/pre-market/grant-access/admin/${requestId}`;
@@ -114,13 +106,7 @@ export function PaymentCheckModal({
         ? { notes: notesToSend }
         : { chargeAmount, notes: notesToSend };
 
-      const res = await apiClient.post(endpoint, payload, {
-        headers: token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : undefined,
-      });
+      const res = await apiClient.post(endpoint, payload);
 
       console.log(res);
 

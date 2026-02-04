@@ -5,7 +5,6 @@ import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import AgentContactCard from "@/components/AgentContactCard";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type AgentUser = {
   _id: string;
@@ -48,7 +47,6 @@ type GrantAccessResponse = {
 export default function AgentDetailsPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -66,18 +64,9 @@ export default function AgentDetailsPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<AgentDetailResponse>(
-          `/agent/admin/${agentId}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }
-        );
+          `/agent/admin/${agentId}`);
 
         if (!isMounted) return;
         setAgent(response.data.data);
@@ -95,7 +84,7 @@ export default function AgentDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, agentId]);
+  }, [agentId]);
 
   const contactCardAgent = useMemo(() => {
     if (!agent) return null;
@@ -114,19 +103,10 @@ export default function AgentDetailsPage() {
     try {
       setIsTogglingAccess(true);
       setAccessError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       const response = await apiClient.post<GrantAccessResponse>(
         `/agent/${agent._id}/toggle-access`,
-        {},
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        {});
 
       if (response.data.data?.hasGrantAccess !== undefined) {
         setHasGrantAccess(response.data.data.hasGrantAccess);

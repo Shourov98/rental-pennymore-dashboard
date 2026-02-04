@@ -17,7 +17,7 @@ import {
   CircleQuestionMark,
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useAppDispatch } from "@/store/hooks";
 import { logout } from "@/store/auth/authSlice";
 
 export default function AdminSidebar({
@@ -28,23 +28,10 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const handleLogout = async () => {
-    const tokenFromStorage =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken")
-        : null;
-    const token = accessToken || tokenFromStorage;
-
     try {
-      await apiClient.post(
-        "/auth/logout",
-        {},
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        },
-      );
+      await apiClient.post("/auth/logout");
     } catch {
       // Logout should still clear local state even if API fails.
     } finally {

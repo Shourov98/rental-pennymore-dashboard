@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Link } from "lucide-react";
 import ReportDateSelector from "@/components/ReportDateSelector";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type Report = {
   _id: string;
@@ -39,7 +38,6 @@ const monthNames = [
 export default function ReportEditPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [link, setLink] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
@@ -57,18 +55,9 @@ export default function ReportEditPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<ReportsResponse>(
-          "/monthly-reports/admin/all",
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }
-        );
+          "/monthly-reports/admin/all");
         const report = response.data.data.find((item) => item._id === reportId);
         if (!isMounted) return;
         if (!report) {
@@ -93,18 +82,13 @@ export default function ReportEditPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, reportId]);
+  }, [reportId]);
 
   const handleSave = async () => {
     if (!reportId) return;
     try {
       setIsSaving(true);
       setError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
       const monthIndex = monthNames.indexOf(month) + 1;
 
       await apiClient.put(
@@ -113,11 +97,7 @@ export default function ReportEditPage() {
           link,
           month: monthIndex,
           year: Number(year),
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        });
 
       router.push("/monthly-reports");
     } catch (err) {

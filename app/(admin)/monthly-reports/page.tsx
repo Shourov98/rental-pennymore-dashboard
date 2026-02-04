@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Copy, Eye, Edit2, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type Report = {
   _id: string;
@@ -25,7 +24,6 @@ type ReportsResponse = {
 
 export default function ReportListPage() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [reports, setReports] = useState<Report[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -38,18 +36,9 @@ export default function ReportListPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<ReportsResponse>(
-          "/monthly-reports/admin/all",
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          }
-        );
+          "/monthly-reports/admin/all");
 
         if (!isMounted) return;
         setReports(response.data.data);
@@ -68,7 +57,7 @@ export default function ReportListPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken]);
+  }, []);
 
   const monthLabel = useMemo(() => {
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -93,14 +82,7 @@ export default function ReportListPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
-      await apiClient.delete(`/monthly-reports/admin/${id}/hard-delete`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
+      await apiClient.delete(`/monthly-reports/admin/${id}/hard-delete`);
       setReports((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to delete report.");

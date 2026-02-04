@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Eye, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type PaymentAgent = {
   _id: string;
@@ -58,7 +57,6 @@ type PaymentsResponse = {
 
 export default function PaymentListPage() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [payments, setPayments] = useState<PaymentItem[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -129,17 +127,11 @@ export default function PaymentListPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<PaymentsResponse>(
           "/grant-access/admin/payments",
           {
             params: { page, limit },
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           }
         );
 
@@ -161,7 +153,7 @@ export default function PaymentListPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, page]);
+  }, [page]);
 
   const totalResults = pagination?.totalItems ?? payments.length;
   const itemsPerPage = pagination?.itemsPerPage ?? limit;

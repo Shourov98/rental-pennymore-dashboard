@@ -12,8 +12,6 @@ import {
 } from "recharts";
 import { DollarSign } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { selectAuth } from "@/store/auth/authSlice";
-import { useAppSelector } from "@/store/hooks";
 
 type YearlyIncomeResponse = {
   success: boolean;
@@ -62,7 +60,6 @@ const months = [
 ];
 
 export default function AnalyticsPage() {
-  const { accessToken } = useAppSelector(selectAuth);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(
     now.getMonth() + 1,
@@ -90,17 +87,9 @@ export default function AnalyticsPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<YearlyIncomeResponse>(
-          `/grant-access/admin/income/${selectedYear}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
+          `/grant-access/admin/income/${selectedYear}`
         );
 
         if (!isMounted) return;
@@ -120,7 +109,7 @@ export default function AnalyticsPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, selectedYear]);
+  }, [selectedYear]);
 
   useEffect(() => {
     if (!selectedYear || !selectedMonth) return;
@@ -130,17 +119,9 @@ export default function AnalyticsPage() {
       try {
         setMonthlyStatus("loading");
         setMonthlyError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<MonthlyIncomeResponse>(
-          `/grant-access/admin/income/monthly/${selectedYear}/${selectedMonth}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
+          `/grant-access/admin/income/monthly/${selectedYear}/${selectedMonth}`
         );
 
         if (!isMounted) return;
@@ -160,7 +141,7 @@ export default function AnalyticsPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear]);
 
   const monthlyData = useMemo(() => {
     const lookup = new Map<number, number>();

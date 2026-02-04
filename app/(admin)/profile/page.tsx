@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Pencil, Lock, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type ProfileData = {
   fullName?: string;
@@ -25,7 +24,6 @@ type ProfileResponse = {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -41,15 +39,8 @@ export default function ProfilePage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
-        const response = await apiClient.get<ProfileResponse>("/user/profile", {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
+        const response = await apiClient.get<ProfileResponse>("/user/profile");
 
         if (!isMounted) return;
         setProfile(response.data.data);
@@ -80,7 +71,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken]);
+  }, []);
 
   const handleCopyReferral = async () => {
     if (!referralLink) return;

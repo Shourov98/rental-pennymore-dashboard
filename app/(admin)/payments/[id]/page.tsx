@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Coins } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type PaymentDetailsResponse = {
   success: boolean;
@@ -65,7 +64,6 @@ export default function PaymentDetailsPage() {
     if (!params?.id) return "";
     return Array.isArray(params.id) ? params.id[0] : params.id;
   }, [params]);
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [paymentData, setPaymentData] = useState<
     PaymentDetailsResponse["data"] | null
   >(null);
@@ -80,17 +78,9 @@ export default function PaymentDetailsPage() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<PaymentDetailsResponse>(
-          `/grant-access/admin/payments/${paymentId}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          },
+          `/grant-access/admin/payments/${paymentId}`
         );
 
         if (!isMounted) return;
@@ -110,7 +100,7 @@ export default function PaymentDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, paymentId]);
+  }, [paymentId]);
 
   const displayStatus = useMemo(() => {
     const rawStatus =

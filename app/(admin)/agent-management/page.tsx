@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Download } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type AgentUser = {
   _id: string;
@@ -54,7 +53,6 @@ type AgentExcelResponse = {
 
 export default function AgentManagement() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   const [agents, setAgents] = useState<Agent[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -95,19 +93,10 @@ export default function AgentManagement() {
     );
 
     try {
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       await apiClient.post(
         `/agent/admin/${userId}/toggle-active`,
-        {},
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        {});
     } catch (err) {
       setAgents((prev) =>
         prev.map((agent) =>
@@ -131,17 +120,11 @@ export default function AgentManagement() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<AgentsResponse>(
           "/agent/admin/all",
           {
             params: { page, limit },
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           }
         );
 
@@ -161,24 +144,15 @@ export default function AgentManagement() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, page]);
+  }, [page]);
 
   const handleExport = async () => {
     try {
       setExportStatus("loading");
       setExportError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       const response = await apiClient.get<AgentExcelResponse>(
-        "/agent/admin/excel-download",
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        "/agent/admin/excel-download");
 
       console.log(response.data);
 

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Download } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import { useAppSelector } from "@/store/hooks";
 
 type Renter = {
   _id: string;
@@ -60,7 +59,6 @@ type RenterExcelResponse = {
 
 export default function RenterManagement() {
   const router = useRouter();
-  const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [renters, setRenters] = useState<Renter[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
@@ -88,17 +86,11 @@ export default function RenterManagement() {
       try {
         setStatus("loading");
         setError(null);
-        const tokenFromStorage =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken")
-            : null;
-        const token = accessToken || tokenFromStorage;
 
         const response = await apiClient.get<RentersResponse>(
           "/renter/admin/renters",
           {
             params: { page, limit },
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
           }
         );
 
@@ -120,24 +112,15 @@ export default function RenterManagement() {
     return () => {
       isMounted = false;
     };
-  }, [accessToken, page]);
+  }, [page]);
 
   const handleExport = async () => {
     try {
       setExportStatus("loading");
       setExportError(null);
-      const tokenFromStorage =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const token = accessToken || tokenFromStorage;
 
       const response = await apiClient.get<RenterExcelResponse>(
-        "/renter/admin/excel-download",
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      );
+        "/renter/admin/excel-download");
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
       if (!downloadUrl) {

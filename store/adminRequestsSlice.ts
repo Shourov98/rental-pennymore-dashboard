@@ -1,7 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { apiClient } from "@/lib/apiClient";
-import type { RootState } from "./store";
 
 export type AdminRequest = {
   _id: string;
@@ -96,17 +95,9 @@ const initialState: AdminRequestsState = {
 export const fetchAdminRequests = createAsyncThunk<
   FetchRequestsResponse,
   { page?: number; limit?: number } | undefined,
-  { rejectValue: string; state: RootState }
->("adminRequests/fetch", async (params, { rejectWithValue, getState }) => {
+  { rejectValue: string }
+>("adminRequests/fetch", async (params, { rejectWithValue }) => {
   try {
-    const state = getState() as RootState;
-    const tokenFromState = state.auth.accessToken;
-    const tokenFromStorage =
-      typeof window !== "undefined"
-        ? localStorage.getItem("accessToken")
-        : null;
-    const accessToken = tokenFromState || tokenFromStorage;
-
     const response = await apiClient.get<FetchRequestsResponse>(
       "/pre-market/admin/requests",
       {
@@ -114,11 +105,6 @@ export const fetchAdminRequests = createAsyncThunk<
           page: params?.page ?? 1,
           limit: params?.limit ?? 20,
         },
-        headers: accessToken
-          ? {
-              Authorization: `Bearer ${accessToken}`,
-            }
-          : undefined,
       }
     );
 
