@@ -64,11 +64,11 @@ export default function AdminSidebar({
           href: "/renter-connections",
         },
         { label: "Notice", icon: Megaphone, href: "/notice" },
-        {
-          label: "Payment Management",
-          icon: CreditCard,
-          href: "/payments",
-        },
+        // {
+        //   label: "Payment Management",
+        //   icon: CreditCard,
+        //   href: "/payments",
+        // },
         { label: "Download Report", icon: FileText, href: "/reports" },
         {
           label: "Monthly Report",
@@ -106,36 +106,34 @@ export default function AdminSidebar({
 
               const Icon = item.icon;
 
-              return (
-                item.label === "Logout" ? (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
-                  >
-                    <Icon className="w-4 h-4 text-gray-700" />
-                    {item.label}
-                  </button>
-                ) : (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={onItemClick}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition ${
-                      isActive
-                        ? "bg-blue-500 text-white border-blue-600"
-                        : "bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
+              return item.label === "Logout" ? (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
+                >
+                  <Icon className="w-4 h-4 text-gray-700" />
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={onItemClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition ${
+                    isActive
+                      ? "bg-blue-500 text-white border-blue-600"
+                      : "bg-white hover:bg-gray-100 text-gray-800 border-gray-200"
+                  }`}
+                >
+                  <Icon
+                    className={`w-4 h-4 ${
+                      isActive ? "text-white" : "text-gray-700"
                     }`}
-                  >
-                    <Icon
-                      className={`w-4 h-4 ${
-                        isActive ? "text-white" : "text-gray-700"
-                      }`}
-                    />
-                    {item.label}
-                  </Link>
-                )
+                  />
+                  {item.label}
+                </Link>
               );
             })}
           </div>
