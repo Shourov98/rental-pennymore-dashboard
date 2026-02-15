@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { apiClient } from "@/lib/apiClient";
+import type { RootState } from "./store";
 
 export type AdminRequest = {
   _id: string;

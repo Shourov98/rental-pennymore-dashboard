@@ -38,7 +38,7 @@ export default function RenterConnectionPage() {
   }, [currentPage, dispatch]);
 
   const filteredData = useMemo(() => {
-    let results = items;
+    let results: AdminRequest[] = items;
 
     if (filters.borough) {
       results = results.filter((item) => {
