@@ -85,7 +85,7 @@ export default function AgentDetailsPage() {
         setError(null);
 
         const response = await apiClient.get<AgentDetailResponse>(
-          `/agent/admin/${agentId}`
+          `/agent/admin/${agentId}`,
         );
 
         if (!isMounted) return;
