@@ -194,13 +194,10 @@ export default function AgentDetailsPage() {
         { activationLink: docusignLink },
       );
 
-      const nextAccess = response.data.data?.hasGrantAccess ?? true;
-      setHasGrantAccess(nextAccess);
       setAgent((prev) =>
         prev
           ? {
               ...prev,
-              hasGrantAccess: nextAccess,
               docuSignPowerFormLink:
                 response.data.data?.activationLink ?? docusignLink,
             }

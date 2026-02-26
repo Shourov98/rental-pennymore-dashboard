@@ -48,7 +48,9 @@ export function PaymentCheckModal({
       setNotes("Approved");
       setError(null);
       setSubmitting(false);
+      return;
     }
+    setSelectedOption("free");
   }, [isOpen]);
 
   useEffect(() => {
@@ -157,6 +159,8 @@ export function PaymentCheckModal({
             />
             Free of Cost
           </label>
+
+          {/*
           <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
             <input
               type="radio"
@@ -169,22 +173,25 @@ export function PaymentCheckModal({
             />
             Charge for grant access
           </label>
+          */}
         </div>
 
-        <div className="relative mb-4">
-          <DollarSign
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500"
-          />
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Enter Amount"
-            className="w-full pl-8 pr-3 py-2.5 text-sm text-black border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            disabled={selectedOption === "free" || submitting}
-          />
-        </div>
+        {selectedOption === "charge" ? (
+          <div className="relative mb-4">
+            <DollarSign
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500"
+            />
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter Amount"
+              className="w-full pl-8 pr-3 py-2.5 text-sm text-black border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={submitting}
+            />
+          </div>
+        ) : null}
 
         <div className="mb-6">
           <label className="block text-xs text-gray-600 mb-1">Notes</label>

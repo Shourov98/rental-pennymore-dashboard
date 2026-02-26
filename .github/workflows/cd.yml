@@ -1,0 +1,61 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+        run: pnpm build
+
+  deploy:
+    name: Deploy To Server
+    runs-on: ubuntu-latest
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd root@BeforeListed-server:/home/apps/app/dashboard
+            git fetch --all
+            git checkout main
+            git pull origin main
+            docker compose up -d --build --remove-orphans
