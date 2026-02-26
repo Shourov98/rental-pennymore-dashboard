@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, Eye, Trash2 } from "lucide-react";
 import FilterModal, { type FilterType } from "@/components/modals/FilterModals";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,7 @@ export default function RenterConnectionPage() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const limit = 20;
   const [deleteTarget, setDeleteTarget] = useState<AdminRequest | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -34,8 +35,8 @@ export default function RenterConnectionPage() {
   });
 
   useEffect(() => {
-    dispatch(fetchAdminRequests({ page: currentPage }));
-  }, [currentPage, dispatch]);
+    dispatch(fetchAdminRequests({ page: currentPage, limit }));
+  }, [currentPage, dispatch, limit]);
 
   const filteredData = useMemo(() => {
     let results: AdminRequest[] = items;
@@ -91,6 +92,18 @@ export default function RenterConnectionPage() {
     pagination?.prevPage ?? (hasPrev ? Math.max(1, pageNumber - 1) : null);
   const nextPage = pagination?.nextPage ?? (hasNext ? pageNumber + 1 : null);
 
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 1) return [];
+    const windowSize = 5;
+    const start = Math.max(1, pageNumber - Math.floor(windowSize / 2));
+    const end = Math.min(totalPages, start + windowSize - 1);
+    const adjustedStart = Math.max(1, end - windowSize + 1);
+    return Array.from(
+      { length: end - adjustedStart + 1 },
+      (_, i) => adjustedStart + i
+    );
+  }, [pageNumber, totalPages]);
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
@@ -118,10 +131,16 @@ export default function RenterConnectionPage() {
     }
   };
 
-  const closeDeleteModal = () => {
+  useEffect(() => {
+    if (pagination?.totalPages && currentPage > pagination.totalPages) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [currentPage, pagination?.totalPages]);
+
+  const closeDeleteModal = useCallback(() => {
     if (isDeleting) return;
     setDeleteTarget(null);
-  };
+  }, [isDeleting]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -131,7 +150,7 @@ export default function RenterConnectionPage() {
       await apiClient.delete(
         `/pre-market/admin/requests/${deleteTarget._id}`);
       setDeleteTarget(null);
-      dispatch(fetchAdminRequests({ page: currentPage }));
+      dispatch(fetchAdminRequests({ page: currentPage, limit }));
     } catch (err) {
       setDeleteError(
         err instanceof Error ? err.message : "Unable to delete this request."
@@ -166,7 +185,7 @@ export default function RenterConnectionPage() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [deleteTarget, isDeleting]);
+  }, [closeDeleteModal, deleteTarget]);
 
   const isInitialLoading = status === "loading" && items.length === 0;
 
@@ -299,24 +318,46 @@ export default function RenterConnectionPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-3">
-        <p className="text-sm text-gray-600">
-          Page {pageNumber} of {totalPages} • {totalItems} total
+      <div className="mt-4 bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-blue-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <p className="text-sm text-[#0B0B2C] font-medium">
+          Showing page <span className="text-blue-600 font-semibold">{pageNumber}</span>{" "}
+          of <span className="text-blue-600 font-semibold">{totalPages}</span> •{" "}
+          Total items: <span className="text-blue-600 font-semibold">{totalItems}</span>
         </p>
-        <div className="flex gap-2">
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={handlePrev}
             disabled={!hasPrev || isInitialLoading}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
+            className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            Previous
+            &lt;
           </button>
+
+          {pageNumbers.map((p) => {
+            const isActive = p === pageNumber;
+            return (
+              <button
+                key={p}
+                onClick={() => setCurrentPage(p)}
+                disabled={isInitialLoading}
+                className={`w-9 h-9 rounded-full border text-sm font-medium transition ${
+                  isActive
+                    ? "border-blue-500 bg-blue-500 text-white shadow-sm"
+                    : "border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50"
+                }`}
+              >
+                {p}
+              </button>
+            );
+          })}
+
           <button
             onClick={handleNext}
             disabled={!hasNext || isInitialLoading}
-            className="px-4 py-2 rounded-lg border border-gray-300 text-sm disabled:opacity-50"
+            className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            Next
+            &gt;
           </button>
         </div>
       </div>

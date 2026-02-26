@@ -166,11 +166,7 @@ export default function RenterManagement() {
     );
   }, [currentPage, totalPages]);
 
-  const startIndex = pagination?.slNo
-    ? Math.max(0, pagination.slNo - 1)
-    : currentPage > 1
-      ? (currentPage - 1) * itemsPerPage
-      : 0;
+  const startIndex = currentPage > 1 ? (currentPage - 1) * itemsPerPage : 0;
 
   const formatReferralName = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);
@@ -299,15 +295,17 @@ export default function RenterManagement() {
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <p>
-          No of Results {renters.length} out of{" "}
-          {totalItems}
+      <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-blue-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <p className="text-sm text-[#0B0B2C] font-medium">
+          Showing <span className="text-blue-600 font-semibold">{renters.length}</span>{" "}
+          of <span className="text-blue-600 font-semibold">{totalItems}</span>{" "}
+          items • Total pages:{" "}
+          <span className="text-blue-600 font-semibold">{totalPages}</span>
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
-            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             disabled={!hasPrev || status === "loading"}
             onClick={() =>
               prevPage ? setPage(prevPage) : null
@@ -317,14 +315,14 @@ export default function RenterManagement() {
           </button>
 
           {pageNumbers.map((pageNumber) => {
-            const isActive = pageNumber === (pagination?.currentPage ?? 1);
+            const isActive = pageNumber === currentPage;
             return (
               <button
                 key={pageNumber}
-                className={`border rounded-full w-8 h-8 ${
+                className={`w-9 h-9 rounded-full border text-sm font-medium transition ${
                   isActive
-                  ? "border-blue-500 text-blue-500"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "border-blue-500 bg-blue-500 text-white shadow-sm"
+                  : "border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50"
                 }`}
                 disabled={status === "loading"}
                 onClick={() => setPage(pageNumber)}
@@ -335,7 +333,7 @@ export default function RenterManagement() {
           })}
 
           <button
-            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             disabled={!hasNext || status === "loading"}
             onClick={() =>
               nextPage ? setPage(nextPage) : null
