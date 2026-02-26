@@ -137,7 +137,7 @@ export default function AgentDetailsPage() {
 
       const response = await apiClient.post<GrantAccessResponse>(
         `/agent/${agent._id}/toggle-access`,
-        {}
+        {},
       );
 
       if (response.data.data?.hasGrantAccess !== undefined) {
@@ -145,14 +145,14 @@ export default function AgentDetailsPage() {
         setAgent((prev) =>
           prev
             ? { ...prev, hasGrantAccess: response.data.data.hasGrantAccess }
-            : prev
+            : prev,
         );
       } else {
         setHasGrantAccess((prev) => !prev);
       }
     } catch (err) {
       setAccessError(
-        err instanceof Error ? err.message : "Unable to update access."
+        err instanceof Error ? err.message : "Unable to update access.",
       );
     } finally {
       setIsTogglingAccess(false);
@@ -191,7 +191,7 @@ export default function AgentDetailsPage() {
 
       const response = await apiClient.post<ActivateWithLinkResponse>(
         `/agent/admin/${agent._id}/activate-with-link`,
-        { activationLink: docusignLink }
+        { activationLink: docusignLink },
       );
 
       const nextAccess = response.data.data?.hasGrantAccess ?? true;
@@ -204,11 +204,11 @@ export default function AgentDetailsPage() {
               docuSignPowerFormLink:
                 response.data.data?.activationLink ?? docusignLink,
             }
-          : prev
+          : prev,
       );
     } catch (err) {
       setAccessError(
-        err instanceof Error ? err.message : "Unable to activate agent."
+        err instanceof Error ? err.message : "Unable to activate agent.",
       );
     } finally {
       setIsActivatingWithLink(false);
@@ -256,17 +256,25 @@ export default function AgentDetailsPage() {
 
       {/* DocuSign Link Section */}
       <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-        <div className="text-sm text-red-500 font-semibold">Required for Agent Activation</div>
+        <div className="text-sm text-red-500 font-semibold">
+          Required for Agent Activation
+        </div>
 
         <div className="space-y-1">
           <h2 className="text-base font-semibold text-[#0B0B2C]">
-            Agent DocuSign PowerForm - Brokerage Client Registration & Disclosures
+            Agent DocuSign PowerForm - Brokerage Client Registration &
+            Disclosures
           </h2>
           <p className="text-sm text-gray-500">
-            Paste the agent&apos;s DocuSign PowerForm link exactly as provided by DocuSign (must include PowerFormId=).
+            Paste the agent&apos;s DocuSign PowerForm link exactly as provided
+            by DocuSign (must include PowerFormId=).
           </p>
           <p className="text-sm text-gray-500">
-            The disclosure template must include a <span className="font-semibold">Text field labeled renter_name</span> for auto-fill where the renter&apos;s name is required.
+            The disclosure template must include a{" "}
+            <span className="font-semibold">
+              Text field labeled renter_name
+            </span>{" "}
+            for auto-fill where the renter&apos;s name is required.
           </p>
         </div>
 
@@ -300,7 +308,9 @@ export default function AgentDetailsPage() {
               >
                 <Copy className="w-4 h-4" />
               </button>
-              {copied ? <span className="text-xs text-green-600">Copied</span> : null}
+              {copied ? (
+                <span className="text-xs text-green-600">Copied</span>
+              ) : null}
             </div>
           ) : (
             <p className="text-sm text-gray-400">No link added yet.</p>
@@ -345,7 +355,9 @@ export default function AgentDetailsPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[#0B0B2C]">Add DocuSign link</h3>
+              <h3 className="text-lg font-semibold text-[#0B0B2C]">
+                Add DocuSign link
+              </h3>
               <button
                 onClick={() => {
                   setIsLinkModalOpen(false);
@@ -371,9 +383,11 @@ export default function AgentDetailsPage() {
                   if (linkError) setLinkError(null);
                 }}
                 placeholder="https://powerforms.docusign.net/..."
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              {linkError ? <p className="text-sm text-red-500">{linkError}</p> : null}
+              {linkError ? (
+                <p className="text-sm text-red-500">{linkError}</p>
+              ) : null}
             </div>
 
             <div className="flex justify-end gap-2">

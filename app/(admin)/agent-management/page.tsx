@@ -21,15 +21,10 @@ type Agent = {
 };
 
 type Pagination = {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-  nextPage: number | null;
-  prevPage: number | null;
-  slNo: number;
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
 };
 
 type AgentsResponse = {
@@ -173,18 +168,16 @@ export default function AgentManagement() {
 
   const isExporting = exportStatus === "loading";
 
-  const totalItems = pagination?.totalItems ?? agents.length;
-  const itemsPerPage = pagination?.itemsPerPage ?? limit;
-  const currentPage = pagination?.currentPage ?? page;
-  const totalPages = pagination?.totalPages
-    ? Math.max(1, pagination.totalPages)
+  const totalItems = pagination?.total ?? agents.length;
+  const itemsPerPage = pagination?.limit ?? limit;
+  const currentPage = pagination?.page ?? page;
+  const totalPages = pagination?.pages
+    ? Math.max(1, pagination.pages)
     : Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const hasPrev = pagination?.hasPrev ?? currentPage > 1;
-  const hasNext = pagination?.hasNext ?? currentPage < totalPages;
-  const prevPage =
-    pagination?.prevPage ?? (hasPrev ? currentPage - 1 : null);
-  const nextPage =
-    pagination?.nextPage ?? (hasNext ? currentPage + 1 : null);
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+  const prevPage = hasPrev ? currentPage - 1 : null;
+  const nextPage = hasNext ? currentPage + 1 : null;
 
   const pageNumbers = useMemo(() => {
     if (totalPages <= 1) return [];
@@ -345,15 +338,17 @@ export default function AgentManagement() {
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <p>
-          No of Results {agents.length} out of{" "}
-          {totalItems}
+      <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-blue-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <p className="text-sm text-[#0B0B2C] font-medium">
+          Showing <span className="text-blue-600 font-semibold">{agents.length}</span>{" "}
+          of <span className="text-blue-600 font-semibold">{totalItems}</span>{" "}
+          items • Total pages:{" "}
+          <span className="text-blue-600 font-semibold">{totalPages}</span>
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
-            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             disabled={!hasPrev || status === "loading"}
             onClick={() => (prevPage ? setPage(prevPage) : null)}
           >
@@ -365,10 +360,10 @@ export default function AgentManagement() {
             return (
               <button
                 key={pageNumber}
-                className={`border rounded-full w-8 h-8 ${
+                className={`w-9 h-9 rounded-full border text-sm font-medium transition ${
                   isActive
-                    ? "border-blue-500 text-blue-500"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "border-blue-500 bg-blue-500 text-white shadow-sm"
+                    : "border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50"
                 }`}
                 disabled={status === "loading"}
                 onClick={() => setPage(pageNumber)}
@@ -379,7 +374,7 @@ export default function AgentManagement() {
           })}
 
           <button
-            className="border rounded-full p-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             disabled={!hasNext || status === "loading"}
             onClick={() => (nextPage ? setPage(nextPage) : null)}
           >
