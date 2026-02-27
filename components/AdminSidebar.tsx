@@ -49,7 +49,7 @@ export default function AdminSidebar({
       section: "Main",
       items: [
         { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-        { label: "Analytics", icon: BarChart3, href: "/analytics" },
+        // { label: "Analytics", icon: BarChart3, href: "/analytics" },
         { label: "Notifications", icon: Bell, href: "/notifications" },
       ],
     },

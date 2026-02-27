@@ -143,7 +143,9 @@ export default function SigninPage() {
         </button>
 
         {error ? (
-          <p className="text-red-600 text-sm text-center">{error}</p>
+          <p className="text-red-600 text-sm text-center">
+            Invalid email or password
+          </p>
         ) : null}
       </form>
     </div>
