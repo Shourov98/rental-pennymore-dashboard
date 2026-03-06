@@ -46,6 +46,11 @@ type AgentExcelResponse = {
   };
 };
 
+type ToggleAgentResponse = {
+  success: boolean;
+  message: string;
+};
+
 export default function AgentManagement() {
   const router = useRouter();
 
@@ -88,10 +93,14 @@ export default function AgentManagement() {
     );
 
     try {
-
-      await apiClient.post(
+      const response = await apiClient.post<ToggleAgentResponse>(
         `/agent/admin/${userId}/toggle-active`,
-        {});
+        {}
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Unable to toggle agent status.");
+      }
     } catch (err) {
       setAgents((prev) =>
         prev.map((agent) =>
@@ -100,8 +109,26 @@ export default function AgentManagement() {
             : agent
         )
       );
+
+      const apiMessage =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof err.response === "object" &&
+        err.response !== null &&
+        "data" in err.response &&
+        typeof err.response.data === "object" &&
+        err.response.data !== null &&
+        "message" in err.response.data &&
+        typeof err.response.data.message === "string"
+          ? err.response.data.message
+          : null;
+
       setToggleError(
-        err instanceof Error ? err.message : "Unable to toggle agent status."
+        apiMessage ||
+          (err instanceof Error
+            ? err.message
+            : "Unable to toggle agent status.")
       );
     } finally {
       setToggleId(null);
