@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Download } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
+import {
+  setAgents as setAgentsInStore,
+  setSelectedAgent,
+  updateAgentByUserId,
+} from "@/store/agentManagementSlice";
+import { useAppDispatch } from "@/store/hooks";
 
 type AgentUser = {
   _id: string;
@@ -17,6 +23,9 @@ type Agent = {
   _id: string;
   userInfo: AgentUser;
   isActive: boolean;
+  activationLink?: string;
+  powerFormLink?: string;
+  docuSignPowerFormLink?: string;
   createdAt: string;
 };
 
@@ -53,6 +62,7 @@ type ToggleAgentResponse = {
 
 export default function AgentManagement() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const [agents, setAgents] = useState<Agent[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -101,6 +111,13 @@ export default function AgentManagement() {
       if (!response.data.success) {
         throw new Error(response.data.message || "Unable to toggle agent status.");
       }
+
+      dispatch(
+        updateAgentByUserId({
+          userId,
+          changes: { isActive: !currentStatus },
+        })
+      );
     } catch (err) {
       setAgents((prev) =>
         prev.map((agent) =>
@@ -152,6 +169,7 @@ export default function AgentManagement() {
 
         if (!isMounted) return;
         setAgents(response.data.data);
+        dispatch(setAgentsInStore(response.data.data));
         setPagination(response.data.pagination);
         setStatus("idle");
       } catch (err) {
@@ -166,7 +184,7 @@ export default function AgentManagement() {
     return () => {
       isMounted = false;
     };
-  }, [page]);
+  }, [dispatch, page]);
 
   const handleExport = async () => {
     try {
@@ -348,9 +366,10 @@ export default function AgentManagement() {
                       </button>
 
                       <button
-                        onClick={() =>
-                          router.push(`/agent-management/${agent.userInfo._id}`)
-                        }
+                        onClick={() => {
+                          dispatch(setSelectedAgent(agent));
+                          router.push(`/agent-management/${agent.userInfo._id}`);
+                        }}
                         className="p-2 rounded-full hover:bg-gray-100 transition"
                       >
                         <Eye className="w-4 h-4 text-gray-700" />

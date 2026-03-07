@@ -5,6 +5,13 @@ import { ArrowLeft, Copy, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import AgentContactCard from "@/components/AgentContactCard";
 import { apiClient } from "@/lib/apiClient";
+import {
+  selectAgentByUserId,
+  setSelectedAgent,
+  updateAgentByUserId,
+  upsertAgent,
+} from "@/store/agentManagementSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 type AgentUser = {
   _id: string;
@@ -24,6 +31,7 @@ type AgentDetail = {
   hasGrantAccess: boolean;
   powerFormLink?: string;
   docuSignPowerFormLink?: string;
+  activationLink?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -57,23 +65,48 @@ type ActivateWithLinkResponse = {
   timestamp: string;
 };
 
+const resolvePowerFormLink = (
+  source: Pick<
+    AgentDetail,
+    "docuSignPowerFormLink" | "powerFormLink" | "activationLink"
+  >
+) => source.docuSignPowerFormLink ?? source.powerFormLink ?? source.activationLink ?? "";
+
 export default function AgentDetailsPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const params = useParams<{ id: string }>();
-  const [agent, setAgent] = useState<AgentDetail | null>(null);
+  const agentId = params?.id;
+  const cachedAgent = useAppSelector((state) =>
+    selectAgentByUserId(state, agentId ?? "")
+  );
+  const [agent, setAgent] = useState<AgentDetail | null>(
+    (cachedAgent as AgentDetail) ?? null
+  );
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [hasGrantAccess, setHasGrantAccess] = useState(false);
+  const [hasGrantAccess, setHasGrantAccess] = useState(
+    cachedAgent?.hasGrantAccess ?? false
+  );
   const [accessError, setAccessError] = useState<string | null>(null);
   const [isTogglingAccess, setIsTogglingAccess] = useState(false);
   const [isActivatingWithLink, setIsActivatingWithLink] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkInput, setLinkInput] = useState("");
-  const [docusignLink, setDocusignLink] = useState("");
+  const [docusignLink, setDocusignLink] = useState(
+    cachedAgent ? resolvePowerFormLink(cachedAgent as AgentDetail) : ""
+  );
   const [linkError, setLinkError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const agentId = params?.id;
+  useEffect(() => {
+    if (!cachedAgent) return;
+    setAgent((prev) => prev ?? (cachedAgent as AgentDetail));
+    setHasGrantAccess(cachedAgent.hasGrantAccess ?? false);
+    setDocusignLink((prev) =>
+      prev || resolvePowerFormLink(cachedAgent as AgentDetail)
+    );
+  }, [cachedAgent]);
 
   useEffect(() => {
     if (!agentId) return;
@@ -89,13 +122,13 @@ export default function AgentDetailsPage() {
         );
 
         if (!isMounted) return;
-        setAgent(response.data.data);
-        setHasGrantAccess(response.data.data.hasGrantAccess ?? false);
-        const incomingLink =
-          response.data.data.docuSignPowerFormLink ??
-          response.data.data.powerFormLink ??
-          "";
+        const nextAgent = response.data.data;
+        setAgent(nextAgent);
+        setHasGrantAccess(nextAgent.hasGrantAccess ?? false);
+        const incomingLink = resolvePowerFormLink(nextAgent);
         setDocusignLink(incomingLink);
+        dispatch(upsertAgent(nextAgent));
+        dispatch(setSelectedAgent(nextAgent));
         setStatus("idle");
       } catch (err) {
         if (!isMounted) return;
@@ -109,7 +142,7 @@ export default function AgentDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [agentId]);
+  }, [agentId, dispatch]);
 
   useEffect(() => {
     if (!copied) return;
@@ -142,11 +175,20 @@ export default function AgentDetailsPage() {
 
       if (response.data.data?.hasGrantAccess !== undefined) {
         setHasGrantAccess(response.data.data.hasGrantAccess);
+        const nextAccess = response.data.data.hasGrantAccess;
         setAgent((prev) =>
           prev
-            ? { ...prev, hasGrantAccess: response.data.data.hasGrantAccess }
+            ? { ...prev, hasGrantAccess: nextAccess }
             : prev,
         );
+        if (agent.userInfo?._id) {
+          dispatch(
+            updateAgentByUserId({
+              userId: agent.userInfo._id,
+              changes: { hasGrantAccess: nextAccess },
+            })
+          );
+        }
       } else {
         setHasGrantAccess((prev) => !prev);
       }
@@ -194,15 +236,28 @@ export default function AgentDetailsPage() {
         { activationLink: docusignLink },
       );
 
+      const persistedLink = response.data.data?.activationLink ?? docusignLink;
+      setDocusignLink(persistedLink);
       setAgent((prev) =>
         prev
           ? {
               ...prev,
-              docuSignPowerFormLink:
-                response.data.data?.activationLink ?? docusignLink,
+              docuSignPowerFormLink: persistedLink,
+              activationLink: persistedLink,
             }
           : prev,
       );
+      if (agent.userInfo?._id) {
+        dispatch(
+          updateAgentByUserId({
+            userId: agent.userInfo._id,
+            changes: {
+              docuSignPowerFormLink: persistedLink,
+              activationLink: persistedLink,
+            },
+          })
+        );
+      }
     } catch (err) {
       setAccessError(
         err instanceof Error ? err.message : "Unable to activate agent.",
