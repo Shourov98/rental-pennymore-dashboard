@@ -69,8 +69,12 @@ const resolvePowerFormLink = (
   source: Pick<
     AgentDetail,
     "docuSignPowerFormLink" | "powerFormLink" | "activationLink"
-  >
-) => source.docuSignPowerFormLink ?? source.powerFormLink ?? source.activationLink ?? "";
+  >,
+) =>
+  source.docuSignPowerFormLink ??
+  source.powerFormLink ??
+  source.activationLink ??
+  "";
 
 export default function AgentDetailsPage() {
   const router = useRouter();
@@ -78,15 +82,15 @@ export default function AgentDetailsPage() {
   const params = useParams<{ id: string }>();
   const agentId = params?.id;
   const cachedAgent = useAppSelector((state) =>
-    selectAgentByUserId(state, agentId ?? "")
+    selectAgentByUserId(state, agentId ?? ""),
   );
   const [agent, setAgent] = useState<AgentDetail | null>(
-    (cachedAgent as AgentDetail) ?? null
+    (cachedAgent as AgentDetail) ?? null,
   );
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
   const [hasGrantAccess, setHasGrantAccess] = useState(
-    cachedAgent?.hasGrantAccess ?? false
+    cachedAgent?.hasGrantAccess ?? false,
   );
   const [accessError, setAccessError] = useState<string | null>(null);
   const [isTogglingAccess, setIsTogglingAccess] = useState(false);
@@ -94,7 +98,7 @@ export default function AgentDetailsPage() {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkInput, setLinkInput] = useState("");
   const [docusignLink, setDocusignLink] = useState(
-    cachedAgent ? resolvePowerFormLink(cachedAgent as AgentDetail) : ""
+    cachedAgent ? resolvePowerFormLink(cachedAgent as AgentDetail) : "",
   );
   const [linkError, setLinkError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -103,8 +107,8 @@ export default function AgentDetailsPage() {
     if (!cachedAgent) return;
     setAgent((prev) => prev ?? (cachedAgent as AgentDetail));
     setHasGrantAccess(cachedAgent.hasGrantAccess ?? false);
-    setDocusignLink((prev) =>
-      prev || resolvePowerFormLink(cachedAgent as AgentDetail)
+    setDocusignLink(
+      (prev) => prev || resolvePowerFormLink(cachedAgent as AgentDetail),
     );
   }, [cachedAgent]);
 
@@ -177,16 +181,14 @@ export default function AgentDetailsPage() {
         setHasGrantAccess(response.data.data.hasGrantAccess);
         const nextAccess = response.data.data.hasGrantAccess;
         setAgent((prev) =>
-          prev
-            ? { ...prev, hasGrantAccess: nextAccess }
-            : prev,
+          prev ? { ...prev, hasGrantAccess: nextAccess } : prev,
         );
         if (agent.userInfo?._id) {
           dispatch(
             updateAgentByUserId({
               userId: agent.userInfo._id,
               changes: { hasGrantAccess: nextAccess },
-            })
+            }),
           );
         }
       } else {
@@ -255,7 +257,7 @@ export default function AgentDetailsPage() {
               docuSignPowerFormLink: persistedLink,
               activationLink: persistedLink,
             },
-          })
+          }),
         );
       }
     } catch (err) {
@@ -415,7 +417,7 @@ export default function AgentDetailsPage() {
                   setIsLinkModalOpen(false);
                   setLinkError(null);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-700 hover:text-gray-700"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -435,7 +437,7 @@ export default function AgentDetailsPage() {
                   if (linkError) setLinkError(null);
                 }}
                 placeholder="https://powerforms.docusign.net/..."
-                className="w-full border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               {linkError ? (
                 <p className="text-sm text-red-500">{linkError}</p>
