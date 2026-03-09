@@ -91,7 +91,7 @@ export default function RenterManagement() {
           "/renter/admin/renters",
           {
             params: { page, limit },
-          }
+          },
         );
 
         if (!isMounted) return;
@@ -102,7 +102,7 @@ export default function RenterManagement() {
         if (!isMounted) return;
         setStatus("failed");
         setError(
-          err instanceof Error ? err.message : "Unable to load renters."
+          err instanceof Error ? err.message : "Unable to load renters.",
         );
       }
     };
@@ -120,7 +120,8 @@ export default function RenterManagement() {
       setExportError(null);
 
       const response = await apiClient.get<RenterExcelResponse>(
-        "/renter/admin/excel-download");
+        "/renter/admin/excel-download",
+      );
 
       const downloadUrl = response.data.data?.downloadUrl?.url;
       if (!downloadUrl) {
@@ -132,7 +133,7 @@ export default function RenterManagement() {
     } catch (err) {
       setExportStatus("failed");
       setExportError(
-        err instanceof Error ? err.message : "Unable to export renters."
+        err instanceof Error ? err.message : "Unable to export renters.",
       );
     }
   };
@@ -149,8 +150,7 @@ export default function RenterManagement() {
   const hasNext = pagination?.hasNext ?? currentPage < totalPages;
   const prevPage =
     pagination?.prevPage ?? (hasPrev ? Math.max(1, currentPage - 1) : null);
-  const nextPage =
-    pagination?.nextPage ?? (hasNext ? currentPage + 1 : null);
+  const nextPage = pagination?.nextPage ?? (hasNext ? currentPage + 1 : null);
 
   const pageNumbers = useMemo(() => {
     if (totalPages <= 1) return [];
@@ -162,7 +162,7 @@ export default function RenterManagement() {
     const adjustedStart = Math.max(1, end - windowSize + 1);
     return Array.from(
       { length: end - adjustedStart + 1 },
-      (_, i) => adjustedStart + i
+      (_, i) => adjustedStart + i,
     );
   }, [currentPage, totalPages]);
 
@@ -213,7 +213,7 @@ export default function RenterManagement() {
                     >
                       {h}
                     </th>
-                  )
+                  ),
                 )}
               </tr>
             </thead>
@@ -241,8 +241,8 @@ export default function RenterManagement() {
                     referralType === "agent_referral"
                       ? renter.referralInfo?.referredByAgent?.referrerName
                       : referralType === "admin_referral"
-                      ? "T. Mor"
-                      : "T. Mor";
+                        ? "T. Mor"
+                        : "T. Mor";
 
                   return (
                     <tr
@@ -266,15 +266,11 @@ export default function RenterManagement() {
                       </td>
 
                       <td className="py-3 px-6 text-sm whitespace-nowrap">
-                        {referralName === "Tuval Mor" ? (
-                          <span className="text-gray-400">None</span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full border border-blue-500 text-blue-600 px-2.5 py-0.5 text-xs font-semibold">
-                            {referralType === "agent_referral" && referralName
-                              ? formatReferralName(referralName)
-                              : referralName}
-                          </span>
-                        )}
+                        <span className="inline-flex items-center rounded-full border border-blue-500 text-blue-600 px-2.5 py-0.5 text-xs font-semibold">
+                          {referralType === "agent_referral" && referralName
+                            ? formatReferralName(referralName)
+                            : referralName}
+                        </span>
                       </td>
 
                       <td className="py-3 px-6 whitespace-nowrap">
@@ -297,7 +293,8 @@ export default function RenterManagement() {
       {/* Footer */}
       <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-blue-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
         <p className="text-sm text-[#0B0B2C] font-medium">
-          Showing <span className="text-blue-600 font-semibold">{renters.length}</span>{" "}
+          Showing{" "}
+          <span className="text-blue-600 font-semibold">{renters.length}</span>{" "}
           of <span className="text-blue-600 font-semibold">{totalItems}</span>{" "}
           items • Total pages:{" "}
           <span className="text-blue-600 font-semibold">{totalPages}</span>
@@ -307,9 +304,7 @@ export default function RenterManagement() {
           <button
             className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             disabled={!hasPrev || status === "loading"}
-            onClick={() =>
-              prevPage ? setPage(prevPage) : null
-            }
+            onClick={() => (prevPage ? setPage(prevPage) : null)}
           >
             &lt;
           </button>
@@ -321,8 +316,8 @@ export default function RenterManagement() {
                 key={pageNumber}
                 className={`w-9 h-9 rounded-full border text-sm font-medium transition ${
                   isActive
-                  ? "border-blue-500 bg-blue-500 text-white shadow-sm"
-                  : "border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50"
+                    ? "border-blue-500 bg-blue-500 text-white shadow-sm"
+                    : "border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50"
                 }`}
                 disabled={status === "loading"}
                 onClick={() => setPage(pageNumber)}
@@ -335,9 +330,7 @@ export default function RenterManagement() {
           <button
             className="w-9 h-9 rounded-full border border-blue-200 bg-white text-[#0B0B2C] hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
             disabled={!hasNext || status === "loading"}
-            onClick={() =>
-              nextPage ? setPage(nextPage) : null
-            }
+            onClick={() => (nextPage ? setPage(nextPage) : null)}
           >
             &gt;
           </button>
