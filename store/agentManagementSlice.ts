@@ -111,6 +111,14 @@ const agentManagementSlice = createSlice({
         state.selectedAgent = mergeAgent(state.selectedAgent, changes);
       }
     },
+    removeAgentByUserId(state, action: PayloadAction<string>) {
+      const userId = action.payload;
+      state.items = state.items.filter((agent) => agent.userInfo?._id !== userId);
+
+      if (state.selectedAgent?.userInfo?._id === userId) {
+        state.selectedAgent = null;
+      }
+    },
   },
 });
 
@@ -119,6 +127,7 @@ export const {
   setSelectedAgent,
   upsertAgent,
   updateAgentByUserId,
+  removeAgentByUserId,
 } = agentManagementSlice.actions;
 
 export const selectAgentManagement = (state: RootState) => state.agentManagement;

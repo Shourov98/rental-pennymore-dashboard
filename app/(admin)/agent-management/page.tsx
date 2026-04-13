@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Download } from "lucide-react";
+import { Eye, Download, Trash2 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import {
+  removeAgentByUserId,
   setAgents as setAgentsInStore,
   setSelectedAgent,
   updateAgentByUserId,
@@ -60,6 +61,30 @@ type ToggleAgentResponse = {
   message: string;
 };
 
+type DeleteAgentResponse = {
+  success: boolean;
+  message: string;
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "data" in error.response &&
+    typeof error.response.data === "object" &&
+    error.response.data !== null &&
+    "message" in error.response.data &&
+    typeof error.response.data.message === "string"
+  ) {
+    return error.response.data.message;
+  }
+
+  return error instanceof Error ? error.message : fallback;
+};
+
 export default function AgentManagement() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -74,6 +99,9 @@ export default function AgentManagement() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [toggleId, setToggleId] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState<"idle" | "loading">("idle");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -127,25 +155,8 @@ export default function AgentManagement() {
         )
       );
 
-      const apiMessage =
-        typeof err === "object" &&
-        err !== null &&
-        "response" in err &&
-        typeof err.response === "object" &&
-        err.response !== null &&
-        "data" in err.response &&
-        typeof err.response.data === "object" &&
-        err.response.data !== null &&
-        "message" in err.response.data &&
-        typeof err.response.data.message === "string"
-          ? err.response.data.message
-          : null;
-
       setToggleError(
-        apiMessage ||
-          (err instanceof Error
-            ? err.message
-            : "Unable to toggle agent status.")
+        getApiErrorMessage(err, "Unable to toggle agent status.")
       );
     } finally {
       setToggleId(null);
@@ -211,7 +222,58 @@ export default function AgentManagement() {
     }
   };
 
+  const closeDeleteModal = () => {
+    if (deleteStatus === "loading") return;
+    setDeleteTarget(null);
+    setDeleteError(null);
+  };
+
+  const handleDeleteAgent = async () => {
+    if (!deleteTarget?.userInfo?._id) return;
+
+    try {
+      setDeleteStatus("loading");
+      setDeleteError(null);
+
+      const response = await apiClient.delete<DeleteAgentResponse>(
+        `/agent/admin/${deleteTarget.userInfo._id}`
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Unable to delete agent.");
+      }
+
+      const remainingAgents = agents.filter(
+        (agent) => agent.userInfo?._id !== deleteTarget.userInfo._id
+      );
+
+      setAgents(remainingAgents);
+      dispatch(removeAgentByUserId(deleteTarget.userInfo._id));
+      dispatch(setAgentsInStore(remainingAgents));
+      setPagination((current) => {
+        if (!current) return current;
+        const nextTotal = Math.max(0, current.total - 1);
+        return {
+          ...current,
+          total: nextTotal,
+          pages: Math.max(1, Math.ceil(nextTotal / current.limit)),
+        };
+      });
+
+      if (remainingAgents.length === 0 && page > 1) {
+        setPage((current) => current - 1);
+      }
+
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteError(getApiErrorMessage(err, "Unable to delete agent."));
+    } finally {
+      setDeleteStatus("idle");
+    }
+  };
+
   const isExporting = exportStatus === "loading";
+  const isDeleting = deleteStatus === "loading";
 
   const totalItems = pagination?.total ?? agents.length;
   const itemsPerPage = pagination?.limit ?? limit;
@@ -374,6 +436,19 @@ export default function AgentManagement() {
                       >
                         <Eye className="w-4 h-4 text-gray-700" />
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError(null);
+                          setDeleteTarget(agent);
+                        }}
+                        disabled={isDeleting}
+                        aria-label={`Delete ${agent.userInfo?.fullName ?? "agent"}`}
+                        className="p-2 rounded-full hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -428,6 +503,48 @@ export default function AgentManagement() {
           </button>
         </div>
       </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-[#0B0B2C]">
+              Delete agent
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              This will permanently delete{" "}
+              <span className="font-semibold text-gray-900">
+                {deleteTarget.userInfo?.fullName ?? "this agent"}
+              </span>
+              . This action cannot be undone.
+            </p>
+
+            {deleteError ? (
+              <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                {deleteError}
+              </p>
+            ) : null}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAgent}
+                disabled={isDeleting}
+                className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete agent"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
