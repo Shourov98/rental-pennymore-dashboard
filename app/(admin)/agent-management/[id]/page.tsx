@@ -65,6 +65,8 @@ type ActivateWithLinkResponse = {
   timestamp: string;
 };
 
+type PowerFormKey = "registration" | "disclosure";
+
 const resolvePowerFormLink = (
   source: Pick<
     AgentDetail,
@@ -96,18 +98,21 @@ export default function AgentDetailsPage() {
   const [isTogglingAccess, setIsTogglingAccess] = useState(false);
   const [isActivatingWithLink, setIsActivatingWithLink] = useState(false);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [activeLinkTarget, setActiveLinkTarget] =
+    useState<PowerFormKey>("registration");
   const [linkInput, setLinkInput] = useState("");
-  const [docusignLink, setDocusignLink] = useState(
+  const [registrationLink, setRegistrationLink] = useState(
     cachedAgent ? resolvePowerFormLink(cachedAgent as AgentDetail) : "",
   );
+  const [disclosureLink, setDisclosureLink] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedTarget, setCopiedTarget] = useState<PowerFormKey | null>(null);
 
   useEffect(() => {
     if (!cachedAgent) return;
     setAgent((prev) => prev ?? (cachedAgent as AgentDetail));
     setHasGrantAccess(cachedAgent.hasGrantAccess ?? false);
-    setDocusignLink(
+    setRegistrationLink(
       (prev) => prev || resolvePowerFormLink(cachedAgent as AgentDetail),
     );
   }, [cachedAgent]);
@@ -130,7 +135,7 @@ export default function AgentDetailsPage() {
         setAgent(nextAgent);
         setHasGrantAccess(nextAgent.hasGrantAccess ?? false);
         const incomingLink = resolvePowerFormLink(nextAgent);
-        setDocusignLink(incomingLink);
+        setRegistrationLink(incomingLink);
         dispatch(upsertAgent(nextAgent));
         dispatch(setSelectedAgent(nextAgent));
         setStatus("idle");
@@ -149,10 +154,10 @@ export default function AgentDetailsPage() {
   }, [agentId, dispatch]);
 
   useEffect(() => {
-    if (!copied) return;
-    const timeout = window.setTimeout(() => setCopied(false), 1500);
+    if (!copiedTarget) return;
+    const timeout = window.setTimeout(() => setCopiedTarget(null), 1500);
     return () => window.clearTimeout(timeout);
-  }, [copied]);
+  }, [copiedTarget]);
 
   const contactCardAgent = useMemo(() => {
     if (!agent) return null;
@@ -203,6 +208,25 @@ export default function AgentDetailsPage() {
     }
   };
 
+  const getPowerFormLink = (target: PowerFormKey) =>
+    target === "registration" ? registrationLink : disclosureLink;
+
+  const setPowerFormLink = (target: PowerFormKey, value: string) => {
+    if (target === "registration") {
+      setRegistrationLink(value);
+      return;
+    }
+
+    setDisclosureLink(value);
+  };
+
+  const openLinkModal = (target: PowerFormKey) => {
+    setActiveLinkTarget(target);
+    setLinkInput(getPowerFormLink(target));
+    setLinkError(null);
+    setIsLinkModalOpen(true);
+  };
+
   const handleAddLink = () => {
     const value = linkInput.trim();
     if (!value) {
@@ -221,25 +245,26 @@ export default function AgentDetailsPage() {
       return;
     }
 
-    setDocusignLink(value);
+    setPowerFormLink(activeLinkTarget, value);
     setLinkInput("");
     setLinkError(null);
     setIsLinkModalOpen(false);
   };
 
-  const handleActivateWithLink = async () => {
-    if (!agent?._id || !docusignLink) return;
+  const handleActivateWithLink = async (target: PowerFormKey) => {
+    const powerFormLink = getPowerFormLink(target);
+    if (!agent?._id || !powerFormLink) return;
     try {
       setIsActivatingWithLink(true);
       setAccessError(null);
 
       const response = await apiClient.post<ActivateWithLinkResponse>(
         `/agent/admin/${agent._id}/activate-with-link`,
-        { activationLink: docusignLink },
+        { activationLink: powerFormLink },
       );
 
-      const persistedLink = response.data.data?.activationLink ?? docusignLink;
-      setDocusignLink(persistedLink);
+      const persistedLink = response.data.data?.activationLink ?? powerFormLink;
+      setPowerFormLink(target, persistedLink);
       setAgent((prev) =>
         prev
           ? {
@@ -269,15 +294,34 @@ export default function AgentDetailsPage() {
     }
   };
 
-  const handleCopyLink = async () => {
-    if (!docusignLink) return;
+  const handleCopyLink = async (target: PowerFormKey) => {
+    const powerFormLink = getPowerFormLink(target);
+    if (!powerFormLink) return;
     try {
-      await navigator.clipboard.writeText(docusignLink);
-      setCopied(true);
+      await navigator.clipboard.writeText(powerFormLink);
+      setCopiedTarget(target);
     } catch {
       setAccessError("Unable to copy link.");
     }
   };
+
+  const powerFormSections: Array<{
+    key: PowerFormKey;
+    title: string;
+    link: string;
+  }> = [
+    {
+      key: "registration",
+      title:
+        "Agent DocuSign PowerForm - Brokerage Client Registration & Disclosures",
+      link: registrationLink,
+    },
+    {
+      key: "disclosure",
+      title: "Agent DocuSign PowerForm - Brokerage Disclosure",
+      link: disclosureLink,
+    },
+  ];
 
   return (
     <div className="space-y-8">
@@ -314,72 +358,71 @@ export default function AgentDetailsPage() {
           Required for Agent Activation
         </div>
 
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-[#0B0B2C]">
-            Agent DocuSign PowerForm - Brokerage Client Registration &
-            Disclosures
-          </h2>
-          <p className="text-sm text-gray-500">
-            Paste the agent&apos;s DocuSign PowerForm link exactly as provided
-            by DocuSign (must include PowerFormId=).
-          </p>
-          <p className="text-sm text-gray-500">
-            The disclosure template must include a{" "}
-            <span className="font-semibold">
-              Text field labeled renter_name
-            </span>{" "}
-            for auto-fill where the renter&apos;s name is required.
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            setLinkInput(docusignLink);
-            setLinkError(null);
-            setIsLinkModalOpen(true);
-          }}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-xl transition"
-        >
-          Add link
-        </button>
-
-        <div>
-          <p className="text-xs text-gray-400 mb-2">Preview</p>
-          {docusignLink ? (
-            <div className="flex items-center gap-2 text-sm text-blue-500">
-              <a
-                href={docusignLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="truncate max-w-[360px] hover:underline"
-              >
-                {docusignLink}
-              </a>
-              <button
-                onClick={handleCopyLink}
-                className="text-gray-500 hover:text-gray-700"
-                aria-label="Copy link"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-              {copied ? (
-                <span className="text-xs text-green-600">Copied</span>
-              ) : null}
+        {powerFormSections.map((section) => (
+          <div key={section.key} className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-[#0B0B2C]">
+                {section.title}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Paste the agent&apos;s DocuSign PowerForm link exactly as
+                provided by DocuSign (must include PowerFormId=).
+              </p>
+              <p className="text-sm text-gray-500">
+                The disclosure template must include a{" "}
+                <span className="font-semibold">
+                  Text field labeled renter_name
+                </span>{" "}
+                for auto-fill where the renter&apos;s name is required.
+              </p>
             </div>
-          ) : (
-            <p className="text-sm text-gray-400">No link added yet.</p>
-          )}
-        </div>
 
-        <div className="flex justify-end">
-          <button
-            onClick={handleActivateWithLink}
-            disabled={!agent || !docusignLink || isActivatingWithLink}
-            className="px-6 py-2.5 text-sm font-medium rounded-2xl transition bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-60"
-          >
-            {isActivatingWithLink ? "Processing..." : "Tested & approved"}
-          </button>
-        </div>
+            <button
+              onClick={() => openLinkModal(section.key)}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-xl transition"
+            >
+              Add link
+            </button>
+
+            <div>
+              <p className="text-xs text-gray-400 mb-2">Preview</p>
+              {section.link ? (
+                <div className="flex items-center gap-2 text-sm text-blue-500">
+                  <a
+                    href={section.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate max-w-[360px] hover:underline"
+                  >
+                    {section.link}
+                  </a>
+                  <button
+                    onClick={() => handleCopyLink(section.key)}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label="Copy link"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  {copiedTarget === section.key ? (
+                    <span className="text-xs text-green-600">Copied</span>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">No link added yet.</p>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => handleActivateWithLink(section.key)}
+                disabled={!agent || !section.link || isActivatingWithLink}
+                className="px-6 py-2.5 text-sm font-medium rounded-2xl transition bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-60"
+              >
+                {isActivatingWithLink ? "Processing..." : "Tested & approved"}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Grant Access */}
