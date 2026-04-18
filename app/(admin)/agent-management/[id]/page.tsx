@@ -32,6 +32,7 @@ type AgentDetail = {
   powerFormLink?: string;
   docuSignPowerFormLink?: string;
   activationLink?: string;
+  disclosureLink?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -61,6 +62,9 @@ type ActivateWithLinkResponse = {
     agentId?: string;
     hasGrantAccess?: boolean;
     activationLink?: string;
+    disclosureLink?: string;
+    isActive?: boolean;
+    accountStatus?: "active" | "inactive";
   };
   timestamp: string;
 };
@@ -77,6 +81,10 @@ const resolvePowerFormLink = (
   source.powerFormLink ??
   source.activationLink ??
   "";
+
+const resolveDisclosurePowerFormLink = (
+  source: Pick<AgentDetail, "disclosureLink">,
+) => source.disclosureLink ?? "";
 
 export default function AgentDetailsPage() {
   const router = useRouter();
@@ -115,6 +123,10 @@ export default function AgentDetailsPage() {
     setRegistrationLink(
       (prev) => prev || resolvePowerFormLink(cachedAgent as AgentDetail),
     );
+    setDisclosureLink(
+      (prev) =>
+        prev || resolveDisclosurePowerFormLink(cachedAgent as AgentDetail),
+    );
   }, [cachedAgent]);
 
   useEffect(() => {
@@ -136,6 +148,7 @@ export default function AgentDetailsPage() {
         setHasGrantAccess(nextAgent.hasGrantAccess ?? false);
         const incomingLink = resolvePowerFormLink(nextAgent);
         setRegistrationLink(incomingLink);
+        setDisclosureLink(resolveDisclosurePowerFormLink(nextAgent));
         dispatch(upsertAgent(nextAgent));
         dispatch(setSelectedAgent(nextAgent));
         setStatus("idle");
@@ -260,17 +273,27 @@ export default function AgentDetailsPage() {
 
       const response = await apiClient.post<ActivateWithLinkResponse>(
         `/agent/admin/${agent._id}/activate-with-link`,
-        { activationLink: powerFormLink },
+        target === "registration"
+          ? { linkType: "registration", activationLink: powerFormLink }
+          : { linkType: "disclosure", disclosureLink: powerFormLink },
       );
 
-      const persistedLink = response.data.data?.activationLink ?? powerFormLink;
-      setPowerFormLink(target, persistedLink);
+      const persistedRegistrationLink =
+        response.data.data?.activationLink ??
+        (target === "registration" ? powerFormLink : registrationLink);
+      const persistedDisclosureLink =
+        response.data.data?.disclosureLink ??
+        (target === "disclosure" ? powerFormLink : disclosureLink);
+      setRegistrationLink(persistedRegistrationLink);
+      setDisclosureLink(persistedDisclosureLink);
       setAgent((prev) =>
         prev
           ? {
               ...prev,
-              docuSignPowerFormLink: persistedLink,
-              activationLink: persistedLink,
+              isActive: response.data.data?.isActive ?? prev.isActive,
+              docuSignPowerFormLink: persistedRegistrationLink,
+              activationLink: persistedRegistrationLink,
+              disclosureLink: persistedDisclosureLink,
             }
           : prev,
       );
@@ -279,8 +302,10 @@ export default function AgentDetailsPage() {
           updateAgentByUserId({
             userId: agent.userInfo._id,
             changes: {
-              docuSignPowerFormLink: persistedLink,
-              activationLink: persistedLink,
+              isActive: response.data.data?.isActive ?? agent.isActive,
+              docuSignPowerFormLink: persistedRegistrationLink,
+              activationLink: persistedRegistrationLink,
+              disclosureLink: persistedDisclosureLink,
             },
           }),
         );
@@ -318,7 +343,7 @@ export default function AgentDetailsPage() {
     },
     {
       key: "disclosure",
-      title: "Agent DocuSign PowerForm - Brokerage Disclosure",
+      title: "Agent DocuSign PowerForm - Brokerage Client Disclosure",
       link: disclosureLink,
     },
   ];

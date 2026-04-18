@@ -25,6 +25,7 @@ type Agent = {
   userInfo: AgentUser;
   isActive: boolean;
   activationLink?: string;
+  disclosureLink?: string;
   powerFormLink?: string;
   docuSignPowerFormLink?: string;
   createdAt: string;

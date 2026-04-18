@@ -22,6 +22,7 @@ export type AgentManagementAgent = {
   powerFormLink?: string;
   docuSignPowerFormLink?: string;
   activationLink?: string;
+  disclosureLink?: string;
   createdAt?: string;
   updatedAt?: string;
 };
