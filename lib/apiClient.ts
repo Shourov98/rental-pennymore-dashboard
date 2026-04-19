@@ -33,12 +33,28 @@ type RefreshTokenResponse = {
   timestamp: string;
 };
 
+const forceLocalLogout = () => {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("user");
+  localStorage.removeItem("profileSnapshot");
+  if (window.location.pathname !== "/signin") {
+    window.location.href = "/signin";
+  }
+};
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config as
       | (typeof error.config & { _retry?: boolean })
       | undefined;
+    const errorCode = error.response?.data?.errorCode;
+
+    if (errorCode === "EMAIL_BLOCKED") {
+      forceLocalLogout();
+      return Promise.reject(error);
+    }
 
     if (
       error.response?.status !== 401 ||

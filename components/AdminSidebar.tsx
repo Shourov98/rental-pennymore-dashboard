@@ -4,17 +4,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  BarChart3,
   Bell,
   Users,
   Handshake,
   Megaphone,
-  CreditCard,
   FileText,
   NotebookTabs,
   User,
   LogOut,
   CircleQuestionMark,
+  ShieldBan,
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch } from "@/store/hooks";
@@ -79,6 +78,11 @@ export default function AdminSidebar({
           label: "FAQ Management",
           icon: CircleQuestionMark,
           href: "/faq-management",
+        },
+        {
+          label: "Blocked Emails",
+          icon: ShieldBan,
+          href: "/blocked-emails",
         },
       ],
     },
