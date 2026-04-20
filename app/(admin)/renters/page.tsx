@@ -12,6 +12,7 @@ type Renter = {
   fullName: string;
   phoneNumber: string;
   totalListings: number;
+  isBlocked?: boolean;
   registrationType?: string;
   referralInfo?: {
     registrationType?: string;
@@ -247,21 +248,37 @@ export default function RenterManagement() {
                   return (
                     <tr
                       key={renter._id}
-                      className="text-[#0B0B2C] border-b border-gray-200 last:border-none hover:bg-gray-50 transition"
+                      className={`border-b last:border-none transition ${
+                        renter.isBlocked
+                          ? "border-red-100 bg-red-50 hover:bg-red-100"
+                          : "border-gray-200 text-[#0B0B2C] hover:bg-gray-50"
+                      }`}
                     >
                       <td className="py-3 px-6 text-sm whitespace-nowrap">
                         {String(startIndex + index + 1).padStart(2, "0")}
                       </td>
 
-                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      <td
+                        className={`py-3 px-6 text-sm whitespace-nowrap ${
+                          renter.isBlocked ? "text-red-700" : ""
+                        }`}
+                      >
                         {renter.fullName}
                       </td>
 
-                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      <td
+                        className={`py-3 px-6 text-sm whitespace-nowrap ${
+                          renter.isBlocked ? "text-red-700" : ""
+                        }`}
+                      >
                         {renter.email}
                       </td>
 
-                      <td className="py-3 px-6 text-sm whitespace-nowrap">
+                      <td
+                        className={`py-3 px-6 text-sm whitespace-nowrap ${
+                          renter.isBlocked ? "text-red-700" : ""
+                        }`}
+                      >
                         {renter.phoneNumber}
                       </td>
 
