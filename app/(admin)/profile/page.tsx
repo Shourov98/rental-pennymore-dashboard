@@ -46,16 +46,6 @@ export default function ProfilePage() {
         setProfile(response.data.data);
         setReferralLink(response.data.data.referralLink ?? null);
         setReferralCode(response.data.data.referralCode ?? null);
-        if (typeof window !== "undefined") {
-          const snapshot = {
-            fullName: response.data.data.fullName ?? "",
-            phone: response.data.data.phone ?? "",
-            profileImageUrl: response.data.data.profileImageUrl ?? null,
-            referralLink: response.data.data.referralLink ?? null,
-            referralCode: response.data.data.referralCode ?? null,
-          };
-          localStorage.setItem("profileSnapshot", JSON.stringify(snapshot));
-        }
         setStatus("idle");
       } catch (err) {
         if (!isMounted) return;

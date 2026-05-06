@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Menu } from "lucide-react";
 import Link from "next/link";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { selectAuth } from "@/store/auth/authSlice";
 import { useAppSelector } from "@/store/hooks";
@@ -15,25 +15,18 @@ export default function AdminNavbar({
   onMenuClick: () => void;
 }) {
   const { user } = useAppSelector(selectAuth);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const safeUser = isMounted ? user : null;
-  const displayName = safeUser?.fullName || safeUser?.email || "Admin";
-  const role = safeUser?.role || "Admin";
-  const profileImageUrl = safeUser?.profileImageUrl ?? null;
+  const displayName = user?.fullName || user?.email || "Admin";
+  const role = user?.role || "Admin";
+  const profileImageUrl = user?.profileImageUrl ?? null;
   const initials = useMemo(() => {
-    const base = safeUser?.fullName || safeUser?.email || "A";
+    const base = user?.fullName || user?.email || "A";
     return base
       .split(" ")
       .map((part) => part[0])
       .join("")
       .slice(0, 2)
       .toUpperCase();
-  }, [safeUser?.email, safeUser?.fullName]);
+  }, [user?.email, user?.fullName]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm h-16 flex items-center justify-between px-6">

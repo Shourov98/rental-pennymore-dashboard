@@ -2,8 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { selectAuth } from "@/store/auth/authSlice";
+import { useAppSelector } from "@/store/hooks";
 
 export default function Home() {
+  const router = useRouter();
+  const { status, user, accessToken } = useAppSelector(selectAuth);
+
+  useEffect(() => {
+    if (status === "succeeded" && (user || accessToken)) {
+      router.replace("/dashboard");
+    }
+  }, [accessToken, router, status, user]);
+
   return (
     <div className="w-full">
       {/* Logo */}

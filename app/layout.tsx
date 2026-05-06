@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/lib/server/domParserPolyfill";
 import "./globals.css";
+import AdminSessionBootstrap from "@/components/AdminSessionBootstrap";
 import { ReduxProvider } from "@/store/ReduxProvider";
 import TitleManager from "@/components/TitleManager";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider>{children}</ReduxProvider>
+        <AdminSessionBootstrap />
         <TitleManager />
       </body>
     </html>

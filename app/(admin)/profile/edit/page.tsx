@@ -41,28 +41,6 @@ export default function EditProfilePage() {
   useEffect(() => {
     let isMounted = true;
 
-    if (typeof window !== "undefined") {
-      const cachedProfile = localStorage.getItem("profileSnapshot");
-      if (cachedProfile) {
-        try {
-          const parsed = JSON.parse(cachedProfile) as {
-            fullName?: string;
-            phone?: string;
-            profileImageUrl?: string | null;
-            profileImage?: string | null;
-          };
-          setFullName(parsed.fullName ?? "");
-          setPhoneNumber(parsed.phone ?? "");
-          const cachedImage = parsed.profileImageUrl ?? parsed.profileImage;
-          if (cachedImage) {
-            setImage(cachedImage);
-          }
-        } catch {
-          localStorage.removeItem("profileSnapshot");
-        }
-      }
-    }
-
     const fetchProfile = async () => {
       try {
         setStatus("loading");

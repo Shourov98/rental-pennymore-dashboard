@@ -35,9 +35,6 @@ export default function AdminSidebar({
       // Logout should still clear local state even if API fails.
     } finally {
       dispatch(logout());
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("profileSnapshot");
-      }
       router.push("/signin");
       onItemClick?.();
     }
