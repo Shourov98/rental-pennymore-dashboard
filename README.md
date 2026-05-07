@@ -42,10 +42,13 @@ Before you begin, ensure you have the following installed:
    ```
 
 3. **Environment Setup**
-   Create a `.env.local` file in the root directory and add your environment variables:
+   Copy the committed template and set the backend API URL for this environment:
+   ```bash
+   cp .env.example .env.local
+   ```
+
    ```env
-   NEXT_PUBLIC_API_URL=your_api_url_here
-   # Add other environment variables as needed
+   NEXT_PUBLIC_API_BASE_URL=http://localhost:7070/api/v1
    ```
 
 ## 🚦 Available Scripts
@@ -123,12 +126,17 @@ This project uses:
 
 ## 🌐 Environment Variables
 
-Create a `.env.local` file in the root directory with the following variables:
+Create a `.env.local` file in the root directory from `.env.example`.
 
 ```env
-NEXT_PUBLIC_API_URL=your_api_url_here
-# Add other environment variables as needed
+NEXT_PUBLIC_API_BASE_URL=http://localhost:7070/api/v1
 ```
+
+| Variable | Required | Description | Where to get it |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Yes | Public base URL the dashboard uses for API calls. Include the API prefix, usually `/api/v1`. This value is exposed to the browser and must not contain secrets. | Use the deployed backend API domain plus the backend `BASE_URL` value. For local development, use `http://localhost:7070/api/v1`. |
+
+Because this is a `NEXT_PUBLIC_` variable, Next.js reads it during the build and includes it in the browser bundle. Set it before running `pnpm build`, Docker builds, or production deployments.
 
 ## 🚀 Deployment
 
