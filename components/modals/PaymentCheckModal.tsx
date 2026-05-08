@@ -110,8 +110,6 @@ export function PaymentCheckModal({
 
       const res = await apiClient.post(endpoint, payload);
 
-      console.log(res);
-
       onSuccess?.();
       onClose();
     } catch (err) {

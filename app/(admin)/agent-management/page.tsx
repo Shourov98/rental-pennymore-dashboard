@@ -206,8 +206,6 @@ export default function AgentManagement() {
       const response = await apiClient.get<AgentExcelResponse>(
         "/agent/admin/excel-download");
 
-      console.log(response.data);
-
       const downloadUrl = response.data.data?.downloadUrl?.url;
       if (!downloadUrl) {
         throw new Error("Download URL not available.");
