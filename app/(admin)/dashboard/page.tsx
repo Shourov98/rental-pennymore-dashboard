@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Copy } from "lucide-react";
 import { selectAuth } from "@/store/auth/authSlice";
 import { useAppSelector } from "@/store/hooks";
-import MonthlyBreakdown from "./MonthlyBreakdown";
 
 export default function AdminDashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
@@ -35,7 +34,7 @@ export default function AdminDashboard() {
       }
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 1500);
-    } catch (err) {
+    } catch {
       setCopyError("Unable to copy link.");
     }
   };

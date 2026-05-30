@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Bell, Trash2 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 
@@ -44,7 +43,6 @@ type UnreadCountResponse = {
 };
 
 export default function NotificationsPage() {
-  const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Pencil, Lock, Copy } from "lucide-react";
+import { Pencil, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/apiClient";
 
@@ -69,7 +69,7 @@ export default function ProfilePage() {
       await navigator.clipboard.writeText(referralLink);
       setIsCopied(true);
       window.setTimeout(() => setIsCopied(false), 1500);
-    } catch (err) {
+    } catch {
       setError("Unable to copy referral link.");
     }
   };

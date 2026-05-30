@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, DollarSign, Calendar } from "lucide-react";
+import { DollarSign } from "lucide-react";
 
 export default function RenterPreferenceForm({
   data,

@@ -7,7 +7,6 @@ import {
   Link2,
   List,
   ListOrdered,
-  Plus,
   Trash2,
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";

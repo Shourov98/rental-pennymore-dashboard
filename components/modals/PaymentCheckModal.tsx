@@ -108,7 +108,7 @@ export function PaymentCheckModal({
         ? { notes: notesToSend }
         : { chargeAmount, notes: notesToSend };
 
-      const res = await apiClient.post(endpoint, payload);
+      await apiClient.post(endpoint, payload);
 
       onSuccess?.();
       onClose();

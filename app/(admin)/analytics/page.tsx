@@ -67,8 +67,8 @@ export default function AnalyticsPage() {
   const [selectedYear, setSelectedYear] = useState<number>(
     now.getFullYear(),
   );
-  const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [, setError] = useState<string | null>(null);
   const [yearlyIncome, setYearlyIncome] = useState<
     YearlyIncomeResponse["data"] | null
   >(null);
@@ -159,9 +159,6 @@ export default function AnalyticsPage() {
     }));
   }, [yearlyIncome]);
 
-  const totalRevenue = yearlyIncome?.totalRevenue ?? 0;
-  const totalCurrency =
-    yearlyIncome?.monthlyBreakdown?.[0]?.currency ?? "USD";
   const monthLabel =
     months.find((month) => month.value === selectedMonth)?.label ??
     "Selected month";

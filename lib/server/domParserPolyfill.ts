@@ -1,7 +1,7 @@
 import "server-only";
 
 class MinimalDOMParser {
-  parseFromString(markup: string, _type?: DOMParserSupportedType) {
+  parseFromString(markup: string) {
     const text = String(markup);
     const plainText = text.replace(/<[^>]*>/g, "");
 
