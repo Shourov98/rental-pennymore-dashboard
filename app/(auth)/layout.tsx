@@ -8,7 +8,7 @@ export default function AuthLayout({
 }) {
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center bg-white overflow-hidden">
-      {/* Background SVG */}
+      {/* Background */}
       <div className="absolute inset-0 flex items-end justify-center pointer-events-none select-none px-4 sm:px-8 md:px-12">
         <Image
           src="/auth-bg.svg"
