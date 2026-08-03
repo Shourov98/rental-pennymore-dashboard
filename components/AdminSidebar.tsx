@@ -14,6 +14,7 @@ import {
   LogOut,
   CircleQuestionMark,
   ShieldBan,
+  Gift,
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch } from "@/store/hooks";
@@ -75,6 +76,11 @@ export default function AdminSidebar({
           label: "FAQ Management",
           icon: CircleQuestionMark,
           href: "/faq-management",
+        },
+        {
+          label: "Moving Discounts",
+          icon: Gift,
+          href: "/moving-discounts",
         },
         {
           label: "Blocked Emails",
