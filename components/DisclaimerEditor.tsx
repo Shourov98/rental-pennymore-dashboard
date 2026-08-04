@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Save } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 
@@ -14,6 +14,11 @@ const sanitizeHtml = (raw: string): string => {
   if (!raw) return "";
   if (typeof window === "undefined") return raw;
 
+  // Plain text (no HTML tags) — pass through as-is
+  if (!/<[a-z][^>]*>/i.test(raw)) {
+    return raw;
+  }
+
   let body: HTMLElement | null = null;
   try {
     const parser = new DOMParser();
@@ -26,7 +31,7 @@ const sanitizeHtml = (raw: string): string => {
       return body.textContent ?? "";
     }
   } catch {
-    // Fall through to plain-text normalization below.
+    return raw;
   }
   if (!body) return raw;
 
@@ -38,6 +43,12 @@ const sanitizeHtml = (raw: string): string => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
       const tagName = element.tagName.toLowerCase();
+
+      // Skip the root body element — sanitize its children only
+      if (tagName === "body") {
+        [...element.childNodes].forEach(sanitizeNode);
+        return;
+      }
 
       if (!ALLOWED_TAGS.has(tagName)) {
         const parent = element.parentNode;
@@ -52,7 +63,9 @@ const sanitizeHtml = (raw: string): string => {
         return;
       }
 
-      [...element.attributes].forEach((attr) => element.removeAttribute(attr.name));
+      [...element.attributes].forEach((attr) =>
+        element.removeAttribute(attr.name),
+      );
     }
     [...node.childNodes].forEach(sanitizeNode);
   };
@@ -63,24 +76,15 @@ const sanitizeHtml = (raw: string): string => {
   return html.replace(/<p>\s*<\/p>/gi, "").replace(/<div>\s*<\/div>/gi, "");
 };
 
-const toEditorHtml = (raw: string): string => {
-  if (!raw) return "";
-  if (/<[a-z][^>]*>/i.test(raw)) return raw;
-  return raw.replace(/\n/g, "<br>");
-};
-
 export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
-  const editorRef = useRef<HTMLDivElement | null>(null);
-  const editorId = useId();
-
   const [loaded, setLoaded] = useState(false);
   const [value, setValue] = useState("");
-  const [isEmpty, setIsEmpty] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const initialValueRef = useRef<string>("");
 
   // ───────── load existing disclaimer ─────────
 
@@ -100,14 +104,13 @@ export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
         if (!controller.cancelled) {
           const text = response.data?.data?.disclaimer ?? "";
           setValue(text);
+          initialValueRef.current = text;
           setLoaded(true);
         }
       } catch (err) {
         if (controller.cancelled) return;
         const message =
-          err instanceof Error
-            ? err.message
-            : "Failed to load disclaimer.";
+          err instanceof Error ? err.message : "Failed to load disclaimer.";
         setError(message);
         setLoaded(true);
       } finally {
@@ -121,33 +124,16 @@ export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
     };
   }, []);
 
-  // ───────── sync editor content when value loads ─────────
+  // ───────── editor handlers ─────────
 
-  useEffect(() => {
-    if (editorRef.current && loaded) {
-      const html = toEditorHtml(value);
-      if (editorRef.current.innerHTML !== html) {
-        editorRef.current.innerHTML = html;
-      }
-      setIsEmpty(!editorRef.current.textContent?.trim());
-    }
-    // Only do this on first load
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded]);
-
-  // ───────── editor commands ─────────
-
-  const handleInput = () => {
-    const html = editorRef.current?.innerHTML ?? "";
-    setValue(html);
-    setIsEmpty(!editorRef.current?.textContent?.trim());
-    setHasChanges(true);
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const next = e.target.value;
+    setValue(next);
+    setHasChanges(next !== initialValueRef.current);
   };
 
   const handleSave = async () => {
-    if (!editorRef.current) return;
-
-    const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+    const sanitized = sanitizeHtml(value);
 
     try {
       setIsSaving(true);
@@ -158,8 +144,8 @@ export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
         disclaimer: sanitized,
       });
 
+      initialValueRef.current = sanitized;
       setValue(sanitized);
-      setIsEmpty(!sanitized.replace(/<[^>]+>/g, "").trim());
       setHasChanges(false);
       setSuccess("Disclaimer saved.");
       onSaved?.(sanitized);
@@ -175,11 +161,7 @@ export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
   const handleCancel = () => {
     if (typeof window === "undefined") return;
     if (!window.confirm("Discard unsaved changes?")) return;
-    const html = toEditorHtml(value);
-    if (editorRef.current) {
-      editorRef.current.innerHTML = html;
-      setIsEmpty(!editorRef.current.textContent?.trim());
-    }
+    setValue(initialValueRef.current);
     setHasChanges(false);
   };
 
@@ -188,9 +170,12 @@ export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
       <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
         <div>
           <h2 className="text-sm font-semibold text-gray-800">Disclaimer</h2>
-          <p className="text-[11px] text-gray-500">
-            Shown at the bottom of the renter Moving Discounts page.
-          </p>
+          {/* <p className="text-[11px] text-gray-500">
+            Shown at the bottom of the renter Moving Discounts page. Use{" "}
+            <code className="bg-gray-100 px-1 rounded">&lt;strong&gt;...&lt;/strong&gt;</code>{" "}
+            or <code className="bg-gray-100 px-1 rounded">&lt;b&gt;...&lt;/b&gt;</code>{" "}
+            for bold.
+          </p> */}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -221,36 +206,26 @@ export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
         </div>
       </div>
 
-      <div className="relative border border-gray-300 rounded-md">
+      <div className="border border-gray-300 rounded-md">
         {isLoading ? (
           <div className="min-h-[60px] px-2.5 py-1.5 text-xs text-gray-400">
             Loading disclaimer...
           </div>
         ) : (
-          <>
-            {isEmpty ? (
-              <span className="absolute left-2.5 top-1.5 text-xs text-gray-400 pointer-events-none">
-                Write the disclaimer renters will see at the bottom of the
-                page...
-              </span>
-            ) : null}
-            <div
-              id={editorId}
-              ref={editorRef}
-              contentEditable={!isLoading && !isSaving}
-              onInput={handleInput}
-              onBlur={handleInput}
-              role="textbox"
-              aria-multiline="true"
-              aria-label="Disclaimer text"
-              spellCheck
-              className="min-h-[60px] w-full cursor-text px-2.5 py-1.5 text-xs text-gray-800 leading-relaxed focus:outline-none [&_strong]:font-bold"
-            />
-          </>
+          <textarea
+            value={value}
+            onChange={handleChange}
+            placeholder="Write the disclaimer renters will see at the bottom of the page..."
+            disabled={isSaving}
+            rows={3}
+            maxLength={5000}
+            className="block w-full min-h-[60px] resize-y bg-transparent px-2.5 py-1.5 text-xs text-gray-800 leading-relaxed placeholder:text-gray-400 focus:outline-none"
+          />
         )}
       </div>
 
-      <div className="text-[11px] mt-1">
+      <div className="text-[11px] mt-1 flex items-center gap-3">
+        <span className="text-gray-400">{value.length}/5000 characters</span>
         {error ? <span className="text-red-600">{error}</span> : null}
         {success ? <span className="text-green-600">{success}</span> : null}
       </div>
