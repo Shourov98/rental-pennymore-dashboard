@@ -124,7 +124,7 @@ export default function MovingDiscountsPage() {
         data: { categories?: MovingDiscountCategory[] };
       }>("/moving-discounts/admin/categories");
 
-      const list = Array.isArray(response.data.data?.categories)
+      const list = Array.isArray(response.data?.data?.categories)
         ? response.data.data.categories
         : [];
       setCategories(list);
@@ -145,11 +145,11 @@ export default function MovingDiscountsPage() {
     try {
       const response = await apiClient.get<{
         success: boolean;
-        data: MovingDiscountItem[];
+        data: { items?: MovingDiscountItem[] };
       }>(`/moving-discounts/admin/items?categoryId=${encodeURIComponent(categoryId)}`);
 
-      const list = Array.isArray(response.data.data)
-        ? response.data.data
+      const list = Array.isArray(response.data?.data?.items)
+        ? response.data.data.items
         : [];
       setItems(list);
     } catch (err) {
