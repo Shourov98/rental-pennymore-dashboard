@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 
+import DisclaimerEditor from "@/components/DisclaimerEditor";
+
 interface MovingDiscountCategory {
   _id: string;
   title: string;
@@ -409,6 +411,10 @@ export default function MovingDiscountsPage() {
           Manage the partner discount categories and items that renters see on
           the Moving Discounts page.
         </p>
+      </div>
+
+      <div className="mb-6">
+        <DisclaimerEditor />
       </div>
 
       {error ? (
