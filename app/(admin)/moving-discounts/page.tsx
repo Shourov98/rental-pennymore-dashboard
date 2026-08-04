@@ -145,8 +145,8 @@ export default function MovingDiscountsPage() {
     try {
       const response = await apiClient.get<{
         success: boolean;
-        data: { items?: MovingDiscountItem[] };
-      }>(`/moving-discounts/admin/items?categoryId=${encodeURIComponent(categoryId)}`);
+        data: { items?: MovingDiscountItem[]; pagination?: unknown };
+      }>(`/moving-discounts/admin/items?categoryId=${encodeURIComponent(categoryId)}&pageSize=100`);
 
       const list = Array.isArray(response.data?.data?.items)
         ? response.data.data.items
