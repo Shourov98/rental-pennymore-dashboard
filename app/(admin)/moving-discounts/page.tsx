@@ -64,6 +64,7 @@ export default function MovingDiscountsPage() {
     null,
   );
   const [status, setStatus] = useState<"idle" | "loading" | "failed">("idle");
+  const [itemsLoading, setItemsLoading] = useState(false);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -118,7 +119,13 @@ export default function MovingDiscountsPage() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      setStatus("loading");
+      // Only flip status to "loading" on the very first fetch — subsequent
+      // refreshes (after a mutation) keep the existing list visible so the
+      // page doesn't flicker and the category clicks stay responsive.
+      setCategories((current) => {
+        if (current.length === 0) setStatus("loading");
+        return current;
+      });
       setError(null);
 
       const response = await apiClient.get<{
@@ -145,6 +152,7 @@ export default function MovingDiscountsPage() {
 
   const fetchItems = useCallback(async (categoryId: string) => {
     try {
+      setItemsLoading(true);
       const response = await apiClient.get<{
         success: boolean;
         data: { items?: MovingDiscountItem[]; pagination?: unknown };
@@ -156,14 +164,13 @@ export default function MovingDiscountsPage() {
       setItems(list);
     } catch (err) {
       flashError(extractErrorMessage(err, "Failed to load items."));
+    } finally {
+      setItemsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void fetchCategories();
-    }, 0);
-    return () => clearTimeout(timer);
+    void fetchCategories();
   }, [fetchCategories]);
 
   useEffect(() => {
@@ -171,11 +178,31 @@ export default function MovingDiscountsPage() {
       setItems([]);
       return;
     }
-    const timer = setTimeout(() => {
-      void fetchItems(selectedCategoryId);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [fetchItems, selectedCategoryId]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        setItemsLoading(true);
+        const response = await apiClient.get<{
+          success: boolean;
+          data: { items?: MovingDiscountItem[]; pagination?: unknown };
+        }>(`/moving-discounts/admin/items?categoryId=${encodeURIComponent(selectedCategoryId)}&pageSize=100`);
+
+        if (cancelled) return;
+        const list = Array.isArray(response.data?.data?.items)
+          ? response.data.data.items
+          : [];
+        setItems(list);
+      } catch (err) {
+        if (cancelled) return;
+        flashError(extractErrorMessage(err, "Failed to load items."));
+      } finally {
+        if (!cancelled) setItemsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategoryId]);
 
   // ───────── category actions ─────────
 
@@ -465,14 +492,21 @@ export default function MovingDiscountsPage() {
                 return (
                   <div
                     key={category._id}
-                    className={`border rounded-xl p-3 transition ${
+                    className={`border rounded-xl p-3 transition cursor-pointer hover:shadow-md hover:border-blue-300 hover:bg-white ${
                       isSelected
-                        ? "border-blue-500 bg-blue-50"
+                        ? "border-blue-500 bg-blue-50 shadow-sm"
                         : "border-gray-200 bg-gray-50"
                     }`}
+                    onClick={() => {
+                      // Whole card is clickable to select (per the user's request)
+                      if (!isEditing) setSelectedCategoryId(category._id);
+                    }}
                   >
                     {isEditing ? (
-                      <div className="flex flex-col gap-2">
+                      <div
+                        className="flex flex-col gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <input
                           type="text"
                           value={editingCategoryTitle}
@@ -481,6 +515,7 @@ export default function MovingDiscountsPage() {
                           }
                           maxLength={200}
                           disabled={isBusy}
+                          autoFocus
                           className="w-full border border-gray-200 bg-white rounded-lg px-2 py-1 text-sm"
                         />
                         <div className="flex gap-2">
@@ -510,23 +545,21 @@ export default function MovingDiscountsPage() {
                       </div>
                     ) : (
                       <div className="flex items-start justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCategoryId(category._id)}
-                          className="text-left flex-1 min-w-0"
-                          disabled={isBusy}
-                        >
+                        <div className="text-left flex-1 min-w-0">
                           <p className="font-semibold text-sm text-gray-900 truncate">
                             {category.title}
                           </p>
                           <p className="text-xs text-gray-500">
                             slug: {category.slug}
                           </p>
-                        </button>
-                        <div className="flex flex-col gap-1">
+                        </div>
+                        <div className="flex flex-col gap-1 shrink-0">
                           <button
                             type="button"
-                            onClick={() => handleMoveCategory(index, -1)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveCategory(index, -1);
+                            }}
                             disabled={isBusy || index === 0}
                             className="p-1 rounded hover:bg-gray-200 disabled:opacity-30"
                             aria-label="Move category up"
@@ -535,7 +568,10 @@ export default function MovingDiscountsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleMoveCategory(index, 1)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveCategory(index, 1);
+                            }}
                             disabled={
                               isBusy || index === categories.length - 1
                             }
@@ -549,7 +585,10 @@ export default function MovingDiscountsPage() {
                     )}
 
                     {!isEditing ? (
-                      <div className="flex gap-3 mt-2">
+                      <div
+                        className="flex gap-3 mt-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
                           onClick={() => handleStartEditCategory(category)}
@@ -606,6 +645,8 @@ export default function MovingDiscountsPage() {
             <p className="text-sm text-gray-500">
               Select a category to manage its items.
             </p>
+          ) : itemsLoading ? (
+            <p className="text-sm text-gray-500">Loading items...</p>
           ) : items.length === 0 && !itemFormVisible ? (
             <p className="text-sm text-gray-500">
               No items in this category yet.
