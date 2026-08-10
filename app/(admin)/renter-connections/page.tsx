@@ -5,6 +5,7 @@ import { SlidersHorizontal, Eye, Trash2 } from "lucide-react";
 import FilterModal, { type FilterType } from "@/components/modals/FilterModals";
 import { useRouter } from "next/navigation";
 
+import { AdminScopeToggle } from "@/components/adminScope/AdminScopeToggle";
 import {
   fetchAdminRequests,
   selectAdminRequests,
@@ -216,6 +217,7 @@ export default function RenterConnectionPage() {
                 <th className="px-4 py-3 text-left">Renter name</th>
                 <th className="px-4 py-3 text-left">Borough</th>
                 <th className="px-4 py-3 text-left">Max Price</th>
+                <th className="px-4 py-3 text-left">Scope</th>
                 <th className="px-4 py-3 text-left">No. Bedrooms</th>
                 <th className="px-4 py-3 text-left">No. of Bath</th>
                 <th className="px-4 py-3 text-left">
@@ -230,7 +232,7 @@ export default function RenterConnectionPage() {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-gray-600"
-                    colSpan={9}
+                    colSpan={10}
                   >
                     Loading requests...
                   </td>
@@ -239,7 +241,7 @@ export default function RenterConnectionPage() {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-red-600"
-                    colSpan={9}
+                    colSpan={10}
                   >
                     {error}
                   </td>
@@ -248,7 +250,7 @@ export default function RenterConnectionPage() {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-gray-600"
-                    colSpan={9}
+                    colSpan={10}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <span>No requests found.</span>
@@ -278,6 +280,22 @@ export default function RenterConnectionPage() {
                       </td>
                       <td className="px-4 py-3">{borough}</td>
                       <td className="px-4 py-3">{formatMaxPrice(item)}</td>
+                      <td className="px-4 py-3">
+                        <AdminScopeToggle
+                          requestId={item._id}
+                          currentScope={item.scope}
+                          locked={item.marketScopeSwitchLocked === true}
+                          lockReason={item.marketScopeSwitchLockedReason}
+                          variant="compact"
+                          onChanged={() => {
+                            // After a successful toggle, refresh the locked
+                            // flag for this row by re-fetching the list.
+                            dispatch(
+                              fetchAdminRequests({ page: currentPage, limit }),
+                            );
+                          }}
+                        />
+                      </td>
                       <td className="px-4 py-3">{bedrooms}</td>
                       <td className="px-4 py-3">{bathrooms}</td>
 

@@ -8,6 +8,7 @@ import { RejectRequestModal } from "@/components/modals/RejectRequestModal";
 import { useParams, useRouter } from "next/navigation";
 import RenterContactCard from "@/components/RenterContactCard";
 import RenterPreferenceForm from "@/components/RenterPreferenceForm";
+import { AdminScopeToggle } from "@/components/adminScope/AdminScopeToggle";
 import { apiClient } from "@/lib/apiClient";
 import { useAppDispatch } from "@/store/hooks";
 import { setCurrentRequest } from "@/store/renterConnectionSlice";
@@ -214,6 +215,29 @@ export default function RenterConnectionDetailsPage() {
           {request?.status ? `${request.status}` : ""}
         </button>
       </div>
+
+      {request && (
+        <section
+          className="w-full bg-white rounded-xl shadow-sm px-6 py-4 sm:px-8 sm:py-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+          aria-label="Market scope"
+        >
+          <div>
+            <h2 className="text-sm font-semibold text-gray-700">Market Scope</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Toggle between Upcoming and All Market. The same lock rule as
+              the renter dashboard applies here.
+            </p>
+          </div>
+          <AdminScopeToggle
+            requestId={request._id}
+            currentScope={request.scope}
+            locked={request.marketScopeSwitchLocked === true}
+            lockReason={request.marketScopeSwitchLockedReason}
+            variant="full"
+            onChanged={() => loadRequest()}
+          />
+        </section>
+      )}
 
       {fetchStatus === "loading" && (
         <div className="mb-4 text-sm text-gray-600">Loading request...</div>

@@ -40,6 +40,10 @@ export type RenterRequestDetail = {
   };
   status?: "Available" | "pending" | "paid" | "free" | "rejected";
   isActive?: boolean;
+  scope?: "Upcoming" | "All Market";
+  visibility?: "PRIVATE" | "SHARED";
+  marketScopeSwitchLocked?: boolean;
+  marketScopeSwitchLockedReason?: string | null;
   preferences?: string[];
   viewedBy?: {
     grantAccessAgents?: string[];

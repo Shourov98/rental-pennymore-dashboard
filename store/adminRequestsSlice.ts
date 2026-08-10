@@ -3,6 +3,8 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { apiClient } from "@/lib/apiClient";
 import type { RootState } from "./store";
 
+export type AdminRequestScope = "Upcoming" | "All Market";
+
 export type AdminRequest = {
   _id: string;
   id: string;
@@ -10,6 +12,10 @@ export type AdminRequest = {
   requestName: string;
   createdAt: string;
   status?: "Available" | "pending" | "paid" | "free" | "rejected";
+  scope?: AdminRequestScope;
+  visibility?: "PRIVATE" | "SHARED";
+  marketScopeSwitchLocked?: boolean;
+  marketScopeSwitchLockedReason?: string | null;
   renterInfo?: {
     renterId: string;
     fullName: string;
@@ -84,6 +90,8 @@ type AdminRequestsState = {
   pagination: Pagination | null;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  scopeLoadingById: Record<string, boolean>;
+  scopeErrorById: Record<string, string | null>;
 };
 
 const initialState: AdminRequestsState = {
@@ -91,6 +99,8 @@ const initialState: AdminRequestsState = {
   pagination: null,
   status: "idle",
   error: null,
+  scopeLoadingById: {},
+  scopeErrorById: {},
 };
 
 export const fetchAdminRequests = createAsyncThunk<
@@ -118,10 +128,47 @@ export const fetchAdminRequests = createAsyncThunk<
   }
 });
 
+type ToggleScopeResponse = {
+  success: boolean;
+  message: string;
+  data: AdminRequest;
+  timestamp: string;
+};
+
+export const toggleAdminRequestScope = createAsyncThunk<
+  { id: string; data: AdminRequest },
+  { id: string; scope: AdminRequestScope },
+  { rejectValue: { id: string; message: string } }
+>(
+  "adminRequests/toggleScope",
+  async ({ id, scope }, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.put<ToggleScopeResponse>(
+        `/pre-market/admin/requests/${id}/scope`,
+        { scope },
+      );
+      return { id, data: response.data.data };
+    } catch (error) {
+      const message
+        = error instanceof Error
+          ? error.message
+          : "Unable to update the request scope.";
+      return rejectWithValue({ id, message });
+    }
+  },
+);
+
 const adminRequestsSlice = createSlice({
   name: "adminRequests",
   initialState,
-  reducers: {},
+  reducers: {
+    clearScopeErrorForId(state, action: { payload: { id: string } }) {
+      const { id } = action.payload;
+      if (state.scopeErrorById[id]) {
+        state.scopeErrorById[id] = null;
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchAdminRequests.pending, (state) => {
@@ -137,9 +184,35 @@ const adminRequestsSlice = createSlice({
         state.status = "failed";
         state.error =
           action.payload ?? action.error.message ?? "Failed to load requests.";
+      })
+      .addCase(toggleAdminRequestScope.pending, (state, action) => {
+        const { id } = action.meta.arg;
+        state.scopeLoadingById[id] = true;
+        state.scopeErrorById[id] = null;
+      })
+      .addCase(toggleAdminRequestScope.fulfilled, (state, action) => {
+        const { id, data } = action.payload;
+        state.scopeLoadingById[id] = false;
+        const index = state.items.findIndex((item) => item._id === id);
+        if (index >= 0) {
+          state.items[index] = {
+            ...state.items[index],
+            ...data,
+          };
+        }
+      })
+      .addCase(toggleAdminRequestScope.rejected, (state, action) => {
+        const { id, message } = action.payload ?? {
+          id: action.meta.arg.id,
+          message: "Failed to update scope.",
+        };
+        state.scopeLoadingById[id] = false;
+        state.scopeErrorById[id] = message;
       });
   },
 });
+
+export const { clearScopeErrorForId } = adminRequestsSlice.actions;
 
 export const selectAdminRequests = (state: RootState) => state.adminRequests;
 export default adminRequestsSlice.reducer;
