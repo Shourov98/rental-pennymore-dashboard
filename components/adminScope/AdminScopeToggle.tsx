@@ -1,7 +1,7 @@
 "use client";
 
 import { Lock } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   selectAdminRequests,
@@ -25,7 +25,10 @@ type AdminScopeToggleProps = {
   onChanged?: (nextScope: AdminRequestScope) => void;
 };
 
-const SCOPE_OPTIONS: Array<AdminRequestScope> = ["Upcoming", "All Market"];
+const SCOPE_LABELS: Array<{ scope: AdminRequestScope; side: "left" | "right" }> = [
+  { scope: "All Market", side: "left" },
+  { scope: "Upcoming", side: "right" },
+];
 
 export function AdminScopeToggle({
   requestId,
@@ -43,12 +46,11 @@ export function AdminScopeToggle({
   const error = localError ?? serverError;
 
   const activeScope: AdminRequestScope = currentScope ?? "Upcoming";
-  const otherScope: AdminRequestScope = useMemo(
-    () => (activeScope === "Upcoming" ? "All Market" : "Upcoming"),
-    [activeScope],
-  );
+  const otherScope: AdminRequestScope =
+    activeScope === "Upcoming" ? "All Market" : "Upcoming";
+  const isAllMarketActive = activeScope === "All Market";
 
-  const handleClick = async () => {
+  const handleToggle = async () => {
     if (locked) {
       setLocalError(
         lockReason
@@ -78,105 +80,105 @@ export function AdminScopeToggle({
   };
 
   const isFull = variant === "full";
+  const isSwitchDisabled = locked || isLoading;
+
+  // Sizing & offsets. The knob sits flush with the track edge on each side.
+  const containerWidth = isFull ? 180 : 150;
+  const containerHeight = isFull ? 32 : 28;
+  const labelText = isFull ? "text-xs" : "text-[11px]";
+  const knobSize = isFull ? 24 : 20;
+  const knobLeftEdge = 4;
+  const knobTrailingLeft = containerWidth - knobSize - knobLeftEdge;
+  const spinnerSize = isFull ? 12 : 10;
 
   return (
     <div
       className={
         isFull
-          ? "flex flex-col gap-2"
-          : "flex flex-col gap-1"
+          ? "flex flex-col items-end gap-1.5"
+          : "flex flex-col items-center gap-1"
       }
       data-testid={`admin-scope-toggle-${requestId}`}
     >
-      <div
-        className={
-          isFull
-            ? "inline-flex items-center gap-2"
-            : "inline-flex items-center gap-1.5"
+      {locked ? (
+        <span
+          className="inline-flex items-center text-amber-600"
+          title={lockReason ?? "Scope switch is locked"}
+          aria-label={
+            lockReason ?? "Scope switch is locked for this request"
+          }
+        >
+          <Lock size={isFull ? 14 : 12} aria-hidden="true" />
+        </span>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={isSwitchDisabled}
+        aria-disabled={isSwitchDisabled}
+        aria-checked={isAllMarketActive}
+        role="switch"
+        aria-label={
+          locked
+            ? `Scope is locked at ${activeScope}`
+            : `Toggle scope. Currently ${activeScope}.`
         }
+        className={[
+          "relative inline-flex items-center rounded-full select-none transition",
+          locked ? "cursor-not-allowed" : "cursor-pointer",
+          locked || !isAllMarketActive ? "bg-gray-200" : "bg-blue-600",
+          isSwitchDisabled ? "opacity-80" : "",
+        ].join(" ")}
+        style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}
       >
-        <div
-          className={
-            isFull
-              ? "inline-flex rounded-full border border-gray-200 bg-gray-50 p-1"
-              : "inline-flex rounded-full border border-gray-200 bg-gray-50 p-0.5"
-          }
-          role="group"
-          aria-label="Request scope"
-        >
-          {SCOPE_OPTIONS.map((option) => {
-            const isActive = option === activeScope;
-            return (
-              <span
-                key={option}
-                className={
-                  isFull
-                    ? `px-3 py-1 text-sm font-medium rounded-full transition ${
-                      isActive
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-gray-500"
-                    }`
-                    : `px-2.5 py-1 text-xs font-medium rounded-full transition ${
-                      isActive
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-gray-500"
-                    }`
-                }
-              >
-                {option}
-              </span>
-            );
-          })}
-        </div>
+        {SCOPE_LABELS.map(({ scope, side }) => {
+          const isActive
+            = (side === "left" && isAllMarketActive)
+              || (side === "right" && !isAllMarketActive);
+          return (
+            <span
+              key={scope}
+              className={[
+                "absolute inset-y-0 flex items-center font-medium",
+                labelText,
+                side === "left" ? "left-2" : "right-2",
+                isActive ? "text-white" : "text-gray-500",
+              ].join(" ")}
+            >
+              {scope}
+            </span>
+          );
+        })}
 
-        {locked ? (
-          <span
-            className="inline-flex items-center text-amber-600"
-            title={lockReason ?? "Scope switch is locked"}
-            aria-label={
-              lockReason ?? "Scope switch is locked for this request"
-            }
-          >
-            <Lock size={14} />
-          </span>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={locked || isLoading}
-          className={
-            isFull
-              ? `px-3 py-1.5 text-sm rounded-md border transition ${
-                locked
-                  ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50"
-                  : isLoading
-                    ? "border-blue-200 text-blue-400 cursor-wait bg-white"
-                    : "border-blue-500 text-blue-600 hover:bg-blue-50 bg-white"
-              }`
-              : `text-xs font-medium px-2 py-1 rounded-md border transition ${
-                locked
-                  ? "border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50"
-                  : isLoading
-                    ? "border-blue-200 text-blue-400 cursor-wait bg-white"
-                    : "border-blue-500 text-blue-600 hover:bg-blue-50 bg-white"
-              }`
-          }
+        <span
+          className={[
+            "absolute top-1/2 -translate-y-1/2 rounded-full bg-white shadow",
+            "transition-all duration-200 ease-out",
+            isLoading ? "opacity-70" : "",
+          ].join(" ")}
+          style={{
+            width: `${knobSize}px`,
+            height: `${knobSize}px`,
+            left: `${isAllMarketActive ? knobLeftEdge : knobTrailingLeft}px`,
+          }}
         >
-          {isLoading
-            ? "Updating…"
-            : locked
-              ? "Locked"
-              : `Switch to ${otherScope}`}
-        </button>
-      </div>
+          {isLoading ? (
+            <span
+              className="absolute inset-0 m-auto rounded-full border-2 border-blue-600 border-t-transparent animate-spin"
+              style={{ width: `${spinnerSize}px`, height: `${spinnerSize}px` }}
+              aria-hidden="true"
+            />
+          ) : null}
+        </span>
+      </button>
 
       {error ? (
         <p
           className={
             isFull
               ? "text-xs text-red-600"
-              : "text-[11px] text-red-600 max-w-[180px]"
+              : "text-[11px] text-red-600 max-w-[180px] text-center"
           }
           role="alert"
         >
@@ -185,7 +187,7 @@ export function AdminScopeToggle({
       ) : null}
 
       {locked && lockReason && isFull ? (
-        <p className="text-xs text-amber-700 max-w-sm">{lockReason}</p>
+        <p className="text-xs text-amber-700 max-w-sm text-right">{lockReason}</p>
       ) : null}
     </div>
   );
