@@ -149,10 +149,19 @@ export const toggleAdminRequestScope = createAsyncThunk<
       );
       return { id, data: response.data.data };
     } catch (error) {
+      // Axios's default message ("Request failed with status code 400") is
+      // unhelpful — prefer the backend's structured message when present.
+      const axiosError = error as {
+        response?: { data?: { message?: string; error?: string } };
+        message?: string;
+      };
+      const backendMessage
+        = axiosError.response?.data?.message
+          ?? axiosError.response?.data?.error;
       const message
-        = error instanceof Error
-          ? error.message
-          : "Unable to update the request scope.";
+        = backendMessage
+          ?? axiosError.message
+          ?? "Unable to update the request scope.";
       return rejectWithValue({ id, message });
     }
   },
