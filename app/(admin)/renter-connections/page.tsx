@@ -284,12 +284,8 @@ export default function RenterConnectionPage() {
                         <AdminScopeToggle
                           requestId={item._id}
                           currentScope={item.scope}
-                          locked={item.marketScopeSwitchLocked === true}
-                          lockReason={item.marketScopeSwitchLockedReason}
                           variant="compact"
                           onChanged={() => {
-                            // After a successful toggle, refresh the locked
-                            // flag for this row by re-fetching the list.
                             dispatch(
                               fetchAdminRequests({ page: currentPage, limit }),
                             );

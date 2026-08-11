@@ -224,15 +224,13 @@ export default function RenterConnectionDetailsPage() {
           <div>
             <h2 className="text-sm font-semibold text-gray-700">Market Scope</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Toggle between Upcoming and All Market. The same lock rule as
-              the renter dashboard applies here.
+              Toggle between Upcoming and All Market. Admins can always change
+              the scope, even when a rental specialist is assigned.
             </p>
           </div>
           <AdminScopeToggle
             requestId={request._id}
             currentScope={request.scope}
-            locked={request.marketScopeSwitchLocked === true}
-            lockReason={request.marketScopeSwitchLockedReason}
             variant="full"
             onChanged={() => loadRequest()}
           />

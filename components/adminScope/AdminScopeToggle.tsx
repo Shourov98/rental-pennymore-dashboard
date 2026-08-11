@@ -1,6 +1,5 @@
 "use client";
 
-import { Lock } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -14,11 +13,6 @@ type AdminScopeToggleProps = {
   requestId: string;
   /** Current scope (from the admin list row). */
   currentScope: AdminRequestScope | undefined;
-  /** Lock flag from the backend — true when the renter cannot move this
-   * request back from "All Market" to "Upcoming". Admins inherit the same
-   * rule; when locked the toggle is disabled. */
-  locked?: boolean;
-  lockReason?: string | null;
   /** Compact style for table rows; full style for the detail page. */
   variant?: "compact" | "full";
   /** Optional callback after a successful scope toggle. */
@@ -33,8 +27,6 @@ const SCOPE_LABELS: Array<{ scope: AdminRequestScope; side: "left" | "right" }> 
 export function AdminScopeToggle({
   requestId,
   currentScope,
-  locked = false,
-  lockReason,
   variant = "compact",
   onChanged,
 }: AdminScopeToggleProps) {
@@ -51,13 +43,6 @@ export function AdminScopeToggle({
   const isAllMarketActive = activeScope === "All Market";
 
   const handleToggle = async () => {
-    if (locked) {
-      setLocalError(
-        lockReason
-          ?? "A rental specialist is already assigned to this request.",
-      );
-      return;
-    }
     if (isLoading) {
       return;
     }
@@ -80,7 +65,7 @@ export function AdminScopeToggle({
   };
 
   const isFull = variant === "full";
-  const isSwitchDisabled = locked || isLoading;
+  const isSwitchDisabled = isLoading;
 
   // Sizing & offsets. The knob sits flush with the track edge on each side.
   const containerWidth = isFull ? 200 : 170;
@@ -105,18 +90,6 @@ export function AdminScopeToggle({
       }
       data-testid={`admin-scope-toggle-${requestId}`}
     >
-      {locked ? (
-        <span
-          className="inline-flex items-center text-amber-600"
-          title={lockReason ?? "Scope switch is locked"}
-          aria-label={
-            lockReason ?? "Scope switch is locked for this request"
-          }
-        >
-          <Lock size={isFull ? 14 : 12} aria-hidden="true" />
-        </span>
-      ) : null}
-
       <button
         type="button"
         onClick={handleToggle}
@@ -124,15 +97,10 @@ export function AdminScopeToggle({
         aria-disabled={isSwitchDisabled}
         aria-checked={isAllMarketActive}
         role="switch"
-        aria-label={
-          locked
-            ? `Scope is locked at ${activeScope}`
-            : `Toggle scope. Currently ${activeScope}.`
-        }
+        aria-label={`Toggle scope. Currently ${activeScope}.`}
         className={[
-          "relative inline-flex items-center rounded-full select-none transition",
-          locked ? "cursor-not-allowed" : "cursor-pointer",
-          locked || !isAllMarketActive ? "bg-gray-200" : "bg-blue-600",
+          "relative inline-flex items-center rounded-full select-none transition cursor-pointer",
+          isAllMarketActive ? "bg-blue-600" : "bg-gray-200",
           isSwitchDisabled ? "opacity-80" : "",
         ].join(" ")}
         style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}
@@ -213,10 +181,6 @@ export function AdminScopeToggle({
         >
           {error}
         </p>
-      ) : null}
-
-      {locked && lockReason && isFull ? (
-        <p className="text-xs text-amber-700 max-w-sm text-right">{lockReason}</p>
       ) : null}
     </div>
   );
