@@ -19,9 +19,9 @@ type AdminScopeToggleProps = {
   /** Optional callback after a successful scope toggle. */
   onChanged?: (nextScope: AdminRequestScope) => void;
   /**
-   * When true the toggle is read-only. Used for "Upcoming (M)" requests where
-   * the listing already has matched grants — the scope is locked and cannot be
-   * flipped without consequences. Renders a gray static pill with a lock icon.
+   * When true the toggle is read-only. The knob stays in the position of the
+   * current scope but turns gray instead of blue, both labels turn gray, and
+   * a small lock icon shows above the pill.
    */
   locked?: boolean;
   /** Optional tooltip / aria-label for the locked state. */
@@ -72,36 +72,51 @@ export function AdminScopeToggle({
 
   const isFull = variant === "full";
 
-  // Sizing. Labels sit fixed at the left/right edges with a small knob
-  // floating between them. Track background stays neutral; the active label
-  // is blue and the inactive label is gray so the user reads the state from
-  // the labels themselves, not the track color.
-  const containerWidth = isFull ? 180 : 150;
-  const containerHeight = isFull ? 30 : 26;
+  // Sizing. The pill itself only holds the track + knob; labels live outside
+  // it on the left/right as siblings. Pill width is intentionally small so
+  // the labels can breathe — no clipping of "Upcoming" by the knob.
+  const pillWidth = isFull ? 56 : 46;
+  const pillHeight = isFull ? 26 : 22;
   const labelText = isFull ? "text-xs" : "text-[11px]";
-  const knobSize = isFull ? 14 : 12;
-  const knobLeftEdge = 6;
-  const knobTrailingLeft = containerWidth - knobSize - knobLeftEdge;
-  const labelInsetX = 10;
+  const knobSize = isFull ? 18 : 16;
+  const knobLeftEdge = 3;
+  const knobRightEdge = pillWidth - knobSize - knobLeftEdge;
   const spinnerSize = isFull ? 10 : 8;
-  const lockIconSize = isFull ? 14 : 12;
+  const lockIconSize = isFull ? 12 : 11;
 
-  // Locked state: gray static pill with a lock icon above. Both labels gray,
-  // no blue knob — matches the "Upcoming (M)" visual from the design.
-  if (locked) {
-    const lockTitle
-      = lockedReason
-        ?? "Scope is locked because this request has matched agents.";
+  // Knob position: hugs the active side (right for Upcoming, left for
+  // All Market). When locked the knob sits in the centre so neither side is
+  // visually implied.
+  const knobLeftPosition = locked
+    ? (pillWidth - knobSize) / 2
+    : isAllMarketActive ? knobLeftEdge : knobRightEdge;
+  const lockTitle
+    = lockedReason
+      ?? "Scope is locked because this request has matched agents.";
+  const isSwitchDisabled = locked || isLoading;
 
-    return (
-      <div
-        className={
-          isFull
-            ? "flex flex-col items-end gap-1.5"
-            : "flex flex-col items-center gap-1"
-        }
-        data-testid={`admin-scope-toggle-${requestId}`}
-      >
+  // Both labels gray when locked, otherwise the active one is blue.
+  const leftLabelClass = locked
+    ? "text-gray-400"
+    : isAllMarketActive
+      ? "text-blue-600"
+      : "text-gray-500";
+  const rightLabelClass = locked
+    ? "text-gray-400"
+    : isAllMarketActive
+      ? "text-gray-500"
+      : "text-blue-600";
+
+  return (
+    <div
+      className={
+        isFull
+          ? "flex flex-col items-end gap-1.5"
+          : "flex flex-col items-center gap-1"
+      }
+      data-testid={`admin-scope-toggle-${requestId}`}
+    >
+      {locked ? (
         <span
           title={lockTitle}
           aria-label={lockTitle}
@@ -113,116 +128,77 @@ export function AdminScopeToggle({
             aria-hidden="true"
           />
         </span>
-        <div
-          role="img"
-          aria-label={`Scope locked. ${lockTitle}`}
-          title={lockTitle}
-          className="relative inline-flex items-center rounded-full bg-gray-200 select-none"
-          style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}
-        >
-          <span
-            className={[
-              "absolute inset-y-0 left-0 flex items-center font-medium whitespace-nowrap text-gray-500",
-              labelText,
-            ].join(" ")}
-            style={{ paddingLeft: `${labelInsetX}px` }}
-          >
-            All Market
-          </span>
-          <span
-            className={[
-              "absolute inset-y-0 right-0 flex items-center font-medium whitespace-nowrap text-gray-500",
-              labelText,
-            ].join(" ")}
-            style={{ paddingRight: `${labelInsetX}px` }}
-          >
-            Upcoming
-          </span>
-        </div>
+      ) : null}
 
-        {error ? (
-          <p
-            className={
-              isFull
-                ? "text-xs text-red-600"
-                : "text-[11px] text-red-600 max-w-[200px] text-center"
-            }
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
-
-  const isSwitchDisabled = isLoading;
-
-  return (
-    <div
-      className={
-        isFull
-          ? "flex flex-col items-end gap-1.5"
-          : "flex flex-col items-center gap-1"
-      }
-      data-testid={`admin-scope-toggle-${requestId}`}
-    >
-      <button
-        type="button"
-        onClick={handleToggle}
-        disabled={isSwitchDisabled}
-        aria-disabled={isSwitchDisabled}
-        aria-checked={isAllMarketActive}
-        role="switch"
-        aria-label={`Toggle scope. Currently ${activeScope}.`}
-        className={[
-          "relative inline-flex items-center rounded-full select-none transition cursor-pointer bg-gray-200",
-          isSwitchDisabled ? "opacity-80" : "",
-        ].join(" ")}
-        style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}
-      >
+      <div className="flex items-center gap-2">
         <span
           className={[
-            "absolute inset-y-0 left-0 flex items-center font-medium whitespace-nowrap",
+            "font-medium whitespace-nowrap",
             labelText,
-            isAllMarketActive ? "text-blue-600" : "text-gray-500",
+            leftLabelClass,
           ].join(" ")}
-          style={{ paddingLeft: `${labelInsetX}px` }}
         >
           All Market
         </span>
 
-        <span
+        <button
+          type="button"
+          onClick={handleToggle}
+          disabled={isSwitchDisabled}
+          aria-disabled={isSwitchDisabled}
+          aria-checked={isAllMarketActive}
+          role="switch"
+          aria-label={
+            locked
+              ? `Scope locked. Currently ${activeScope}.`
+              : `Toggle scope. Currently ${activeScope}.`
+          }
+          title={locked ? lockTitle : undefined}
           className={[
-            "absolute inset-y-0 right-0 flex items-center font-medium whitespace-nowrap",
-            labelText,
-            isAllMarketActive ? "text-gray-500" : "text-blue-600",
+            "relative inline-flex items-center rounded-full select-none transition bg-gray-200",
+            locked ? "cursor-not-allowed" : "cursor-pointer",
+            isLoading && !locked ? "opacity-80" : "",
           ].join(" ")}
-          style={{ paddingRight: `${labelInsetX}px` }}
+          style={{
+            width: `${pillWidth}px`,
+            height: `${pillHeight}px`,
+          }}
         >
-          Upcoming
-        </span>
+          <span
+            className={[
+              "absolute top-1/2 -translate-y-1/2 rounded-full shadow transition-all duration-200 ease-out",
+              locked ? "bg-gray-400" : "bg-blue-600",
+              isLoading && !locked ? "opacity-70" : "",
+            ].join(" ")}
+            style={{
+              width: `${knobSize}px`,
+              height: `${knobSize}px`,
+              left: `${knobLeftPosition}px`,
+            }}
+          >
+            {isLoading && !locked ? (
+              <span
+                className="absolute inset-0 m-auto rounded-full border-2 border-white border-t-transparent animate-spin"
+                style={{
+                  width: `${spinnerSize}px`,
+                  height: `${spinnerSize}px`,
+                }}
+                aria-hidden="true"
+              />
+            ) : null}
+          </span>
+        </button>
 
         <span
           className={[
-            "absolute top-1/2 -translate-y-1/2 rounded-full bg-blue-600 shadow transition-all duration-200 ease-out",
-            isLoading ? "opacity-70" : "",
+            "font-medium whitespace-nowrap",
+            labelText,
+            rightLabelClass,
           ].join(" ")}
-          style={{
-            width: `${knobSize}px`,
-            height: `${knobSize}px`,
-            left: `${isAllMarketActive ? knobLeftEdge : knobTrailingLeft}px`,
-          }}
         >
-          {isLoading ? (
-            <span
-              className="absolute inset-0 m-auto rounded-full border-2 border-white border-t-transparent animate-spin"
-              style={{ width: `${spinnerSize}px`, height: `${spinnerSize}px` }}
-              aria-hidden="true"
-            />
-          ) : null}
+          Upcoming
         </span>
-      </button>
+      </div>
 
       {error ? (
         <p

@@ -216,7 +216,14 @@ export default function RenterConnectionDetailsPage() {
         </button>
       </div>
 
-      {request && (
+      {request && (() => {
+        // Upcoming (M): All Market scope with at least one matched agent —
+        // the toggle should be read-only. Derived locally from the request
+        // summary, no backend change needed.
+        const approvedCount = request.agentRequestSummary?.approved ?? 0;
+        const isUpcomingMatched
+          = request.scope === "All Market" && approvedCount > 0;
+        return (
         <section
           className="w-full bg-white rounded-xl shadow-sm px-6 py-4 sm:px-8 sm:py-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           aria-label="Market scope"
@@ -232,12 +239,12 @@ export default function RenterConnectionDetailsPage() {
             requestId={request._id}
             currentScope={request.scope}
             variant="full"
-            locked={request.marketScopeSwitchLocked === true}
-            lockedReason={request.marketScopeSwitchLockedReason}
+            locked={isUpcomingMatched}
             onChanged={() => loadRequest()}
           />
         </section>
-      )}
+        );
+      })()}
 
       {fetchStatus === "loading" && (
         <div className="mb-4 text-sm text-gray-600">Loading request...</div>

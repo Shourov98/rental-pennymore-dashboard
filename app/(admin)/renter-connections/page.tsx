@@ -217,7 +217,7 @@ export default function RenterConnectionPage() {
                 <th className="px-4 py-3 text-left">Renter name</th>
                 <th className="px-4 py-3 text-left">Borough</th>
                 <th className="px-4 py-3 text-left">Max Price</th>
-                <th className="px-4 py-3 text-left min-w-[200px]">Scope</th>
+                <th className="px-4 py-3 text-left min-w-[160px]">Scope</th>
                 <th className="px-4 py-3 text-left">No. Bedrooms</th>
                 <th className="px-4 py-3 text-left">No. of Bath</th>
                 <th className="px-4 py-3 text-left">
@@ -265,6 +265,10 @@ export default function RenterConnectionPage() {
                   const agentsApproved = item.agentRequestSummary?.approve ?? 0;
                   const agentsRequested = item.agentRequestSummary?.total ?? 0;
                   const requestIdentifier = item._id;
+                  // Upcoming (M): All Market scope with at least one matched
+                  // (approved/paid/free) agent — the toggle should be read-only.
+                  const isUpcomingMatched
+                    = item.scope === "All Market" && agentsApproved > 0;
 
                   return (
                     <tr
@@ -280,13 +284,12 @@ export default function RenterConnectionPage() {
                       </td>
                       <td className="px-4 py-3">{borough}</td>
                       <td className="px-4 py-3">{formatMaxPrice(item)}</td>
-                      <td className="px-4 py-3 min-w-[200px]">
+                      <td className="px-4 py-3 min-w-[160px]">
                         <AdminScopeToggle
                           requestId={item._id}
                           currentScope={item.scope}
                           variant="compact"
-                          locked={item.marketScopeSwitchLocked === true}
-                          lockedReason={item.marketScopeSwitchLockedReason}
+                          locked={isUpcomingMatched}
                           onChanged={() => {
                             dispatch(
                               fetchAdminRequests({ page: currentPage, limit }),
