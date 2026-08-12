@@ -19,11 +19,6 @@ type AdminScopeToggleProps = {
   onChanged?: (nextScope: AdminRequestScope) => void;
 };
 
-const SCOPE_LABELS: Array<{ scope: AdminRequestScope; side: "left" | "right" }> = [
-  { scope: "All Market", side: "left" },
-  { scope: "Upcoming", side: "right" },
-];
-
 export function AdminScopeToggle({
   requestId,
   currentScope,
@@ -67,19 +62,18 @@ export function AdminScopeToggle({
   const isFull = variant === "full";
   const isSwitchDisabled = isLoading;
 
-  // Sizing & offsets. The knob sits flush with the track edge on each side.
-  const containerWidth = isFull ? 200 : 170;
-  const containerHeight = isFull ? 32 : 28;
+  // Sizing. Labels sit fixed at the left/right edges with a small knob
+  // floating between them. Track background stays neutral; the active label
+  // is blue and the inactive label is gray so the user reads the state from
+  // the labels themselves, not the track color.
+  const containerWidth = isFull ? 180 : 150;
+  const containerHeight = isFull ? 30 : 26;
   const labelText = isFull ? "text-xs" : "text-[11px]";
-  const knobSize = isFull ? 24 : 20;
-  const knobLeftEdge = 4;
+  const knobSize = isFull ? 14 : 12;
+  const knobLeftEdge = 6;
   const knobTrailingLeft = containerWidth - knobSize - knobLeftEdge;
-  const labelGap = 6;
-  // Active label sits flush against the knob's inner edge so it stays
-  // visible regardless of which side the knob is on. Inactive label sits
-  // on the opposite edge.
-  const knobRightEdge = knobLeftEdge + knobSize;
-  const spinnerSize = isFull ? 12 : 10;
+  const labelInsetX = 10;
+  const spinnerSize = isFull ? 10 : 8;
 
   return (
     <div
@@ -99,59 +93,36 @@ export function AdminScopeToggle({
         role="switch"
         aria-label={`Toggle scope. Currently ${activeScope}.`}
         className={[
-          "relative inline-flex items-center rounded-full select-none transition cursor-pointer",
-          isAllMarketActive ? "bg-blue-600" : "bg-gray-200",
+          "relative inline-flex items-center rounded-full select-none transition cursor-pointer bg-gray-200",
           isSwitchDisabled ? "opacity-80" : "",
         ].join(" ")}
         style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}
       >
-        {SCOPE_LABELS.map(({ scope, side }) => {
-          const isActive
-            = (side === "left" && isAllMarketActive)
-              || (side === "right" && !isAllMarketActive);
-          // Active label sits next to the knob on its inside edge; inactive
-          // label sits flush with the opposite edge of the track.
-          let style: React.CSSProperties;
-          let justify: string;
-          if (isActive && side === "left") {
-            style = { left: `${knobRightEdge + labelGap}px` };
-            justify = "justify-start";
-          }
-          else if (isActive && side === "right") {
-            style = {
-              left: 0,
-              right: `${containerWidth - knobTrailingLeft + labelGap}px`,
-            };
-            justify = "justify-end";
-          }
-          else if (side === "left") {
-            style = { left: `${knobLeftEdge}px` };
-            justify = "justify-start";
-          }
-          else {
-            style = { left: 0, right: `${knobLeftEdge}px` };
-            justify = "justify-end";
-          }
-          return (
-            <span
-              key={scope}
-              className={[
-                "absolute inset-y-0 flex items-center font-medium whitespace-nowrap",
-                labelText,
-                justify,
-                isActive ? "text-white" : "text-gray-500",
-              ].join(" ")}
-              style={style}
-            >
-              {scope}
-            </span>
-          );
-        })}
+        <span
+          className={[
+            "absolute inset-y-0 left-0 flex items-center font-medium whitespace-nowrap",
+            labelText,
+            isAllMarketActive ? "text-blue-600" : "text-gray-500",
+          ].join(" ")}
+          style={{ paddingLeft: `${labelInsetX}px` }}
+        >
+          All Market
+        </span>
 
         <span
           className={[
-            "absolute top-1/2 -translate-y-1/2 rounded-full bg-white shadow",
-            "transition-all duration-200 ease-out",
+            "absolute inset-y-0 right-0 flex items-center font-medium whitespace-nowrap",
+            labelText,
+            isAllMarketActive ? "text-gray-500" : "text-blue-600",
+          ].join(" ")}
+          style={{ paddingRight: `${labelInsetX}px` }}
+        >
+          Upcoming
+        </span>
+
+        <span
+          className={[
+            "absolute top-1/2 -translate-y-1/2 rounded-full bg-blue-600 shadow transition-all duration-200 ease-out",
             isLoading ? "opacity-70" : "",
           ].join(" ")}
           style={{
@@ -162,7 +133,7 @@ export function AdminScopeToggle({
         >
           {isLoading ? (
             <span
-              className="absolute inset-0 m-auto rounded-full border-2 border-blue-600 border-t-transparent animate-spin"
+              className="absolute inset-0 m-auto rounded-full border-2 border-white border-t-transparent animate-spin"
               style={{ width: `${spinnerSize}px`, height: `${spinnerSize}px` }}
               aria-hidden="true"
             />

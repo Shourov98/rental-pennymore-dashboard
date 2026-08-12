@@ -217,7 +217,7 @@ export default function RenterConnectionPage() {
                 <th className="px-4 py-3 text-left">Renter name</th>
                 <th className="px-4 py-3 text-left">Borough</th>
                 <th className="px-4 py-3 text-left">Max Price</th>
-                <th className="px-4 py-3 text-left min-w-[220px]">Scope</th>
+                <th className="px-4 py-3 text-left min-w-[200px]">Scope</th>
                 <th className="px-4 py-3 text-left">No. Bedrooms</th>
                 <th className="px-4 py-3 text-left">No. of Bath</th>
                 <th className="px-4 py-3 text-left">
@@ -280,7 +280,7 @@ export default function RenterConnectionPage() {
                       </td>
                       <td className="px-4 py-3">{borough}</td>
                       <td className="px-4 py-3">{formatMaxPrice(item)}</td>
-                      <td className="px-4 py-3 min-w-[220px]">
+                      <td className="px-4 py-3 min-w-[200px]">
                         <AdminScopeToggle
                           requestId={item._id}
                           currentScope={item.scope}
