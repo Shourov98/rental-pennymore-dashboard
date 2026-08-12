@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Lock } from "lucide-react";
 
 import {
   selectAdminRequests,
@@ -17,6 +18,14 @@ type AdminScopeToggleProps = {
   variant?: "compact" | "full";
   /** Optional callback after a successful scope toggle. */
   onChanged?: (nextScope: AdminRequestScope) => void;
+  /**
+   * When true the toggle is read-only. Used for "Upcoming (M)" requests where
+   * the listing already has matched grants — the scope is locked and cannot be
+   * flipped without consequences. Renders a gray static pill with a lock icon.
+   */
+  locked?: boolean;
+  /** Optional tooltip / aria-label for the locked state. */
+  lockedReason?: string | null;
 };
 
 export function AdminScopeToggle({
@@ -24,6 +33,8 @@ export function AdminScopeToggle({
   currentScope,
   variant = "compact",
   onChanged,
+  locked = false,
+  lockedReason = null,
 }: AdminScopeToggleProps) {
   const dispatch = useAppDispatch();
   const { scopeLoadingById, scopeErrorById } = useAppSelector(selectAdminRequests);
@@ -38,7 +49,7 @@ export function AdminScopeToggle({
   const isAllMarketActive = activeScope === "All Market";
 
   const handleToggle = async () => {
-    if (isLoading) {
+    if (isLoading || locked) {
       return;
     }
     setLocalError(null);
@@ -60,7 +71,6 @@ export function AdminScopeToggle({
   };
 
   const isFull = variant === "full";
-  const isSwitchDisabled = isLoading;
 
   // Sizing. Labels sit fixed at the left/right edges with a small knob
   // floating between them. Track background stays neutral; the active label
@@ -74,6 +84,79 @@ export function AdminScopeToggle({
   const knobTrailingLeft = containerWidth - knobSize - knobLeftEdge;
   const labelInsetX = 10;
   const spinnerSize = isFull ? 10 : 8;
+  const lockIconSize = isFull ? 14 : 12;
+
+  // Locked state: gray static pill with a lock icon above. Both labels gray,
+  // no blue knob — matches the "Upcoming (M)" visual from the design.
+  if (locked) {
+    const lockTitle
+      = lockedReason
+        ?? "Scope is locked because this request has matched agents.";
+
+    return (
+      <div
+        className={
+          isFull
+            ? "flex flex-col items-end gap-1.5"
+            : "flex flex-col items-center gap-1"
+        }
+        data-testid={`admin-scope-toggle-${requestId}`}
+      >
+        <span
+          title={lockTitle}
+          aria-label={lockTitle}
+          className="inline-flex"
+        >
+          <Lock
+            size={lockIconSize}
+            className="text-gray-500"
+            aria-hidden="true"
+          />
+        </span>
+        <div
+          role="img"
+          aria-label={`Scope locked. ${lockTitle}`}
+          title={lockTitle}
+          className="relative inline-flex items-center rounded-full bg-gray-200 select-none"
+          style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}
+        >
+          <span
+            className={[
+              "absolute inset-y-0 left-0 flex items-center font-medium whitespace-nowrap text-gray-500",
+              labelText,
+            ].join(" ")}
+            style={{ paddingLeft: `${labelInsetX}px` }}
+          >
+            All Market
+          </span>
+          <span
+            className={[
+              "absolute inset-y-0 right-0 flex items-center font-medium whitespace-nowrap text-gray-500",
+              labelText,
+            ].join(" ")}
+            style={{ paddingRight: `${labelInsetX}px` }}
+          >
+            Upcoming
+          </span>
+        </div>
+
+        {error ? (
+          <p
+            className={
+              isFull
+                ? "text-xs text-red-600"
+                : "text-[11px] text-red-600 max-w-[200px] text-center"
+            }
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  const isSwitchDisabled = isLoading;
 
   return (
     <div

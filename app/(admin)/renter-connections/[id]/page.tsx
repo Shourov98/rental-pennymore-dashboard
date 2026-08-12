@@ -232,6 +232,8 @@ export default function RenterConnectionDetailsPage() {
             requestId={request._id}
             currentScope={request.scope}
             variant="full"
+            locked={request.marketScopeSwitchLocked === true}
+            lockedReason={request.marketScopeSwitchLockedReason}
             onChanged={() => loadRequest()}
           />
         </section>

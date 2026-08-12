@@ -285,6 +285,8 @@ export default function RenterConnectionPage() {
                           requestId={item._id}
                           currentScope={item.scope}
                           variant="compact"
+                          locked={item.marketScopeSwitchLocked === true}
+                          lockedReason={item.marketScopeSwitchLockedReason}
                           onChanged={() => {
                             dispatch(
                               fetchAdminRequests({ page: currentPage, limit }),
