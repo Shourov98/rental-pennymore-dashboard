@@ -265,10 +265,6 @@ export default function RenterConnectionPage() {
                   const agentsApproved = item.agentRequestSummary?.approve ?? 0;
                   const agentsRequested = item.agentRequestSummary?.total ?? 0;
                   const requestIdentifier = item._id;
-                  // Upcoming (M): All Market scope with at least one matched
-                  // (approved/paid/free) agent — the toggle should be read-only.
-                  const isUpcomingMatched
-                    = item.scope === "All Market" && agentsApproved > 0;
 
                   return (
                     <tr
@@ -289,7 +285,8 @@ export default function RenterConnectionPage() {
                           requestId={item._id}
                           currentScope={item.scope}
                           variant="compact"
-                          locked={isUpcomingMatched}
+                          locked={Boolean(item.marketScopeSwitchLocked)}
+                          lockedReason={item.marketScopeSwitchLockedReason}
                           onChanged={() => {
                             dispatch(
                               fetchAdminRequests({ page: currentPage, limit }),

@@ -216,14 +216,7 @@ export default function RenterConnectionDetailsPage() {
         </button>
       </div>
 
-      {request && (() => {
-        // Upcoming (M): All Market scope with at least one matched agent —
-        // the toggle should be read-only. Derived locally from the request
-        // summary, no backend change needed.
-        const approvedCount = request.agentRequestSummary?.approved ?? 0;
-        const isUpcomingMatched
-          = request.scope === "All Market" && approvedCount > 0;
-        return (
+      {request && (
         <section
           className="w-full bg-white rounded-xl shadow-sm px-6 py-4 sm:px-8 sm:py-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           aria-label="Market scope"
@@ -231,20 +224,20 @@ export default function RenterConnectionDetailsPage() {
           <div>
             <h2 className="text-sm font-semibold text-gray-700">Market Scope</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Toggle between Upcoming and All Market. Admins can always change
-              the scope, even when a rental specialist is assigned.
+              Toggle between Upcoming and All Market. Upcoming (M) requests
+              remain locked while a rental specialist is assigned.
             </p>
           </div>
           <AdminScopeToggle
             requestId={request._id}
             currentScope={request.scope}
             variant="full"
-            locked={isUpcomingMatched}
+            locked={Boolean(request.marketScopeSwitchLocked)}
+            lockedReason={request.marketScopeSwitchLockedReason}
             onChanged={() => loadRequest()}
           />
         </section>
-        );
-      })()}
+      )}
 
       {fetchStatus === "loading" && (
         <div className="mb-4 text-sm text-gray-600">Loading request...</div>
