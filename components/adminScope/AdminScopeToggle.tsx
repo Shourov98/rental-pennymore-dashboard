@@ -85,19 +85,22 @@ export function AdminScopeToggle({
   const lockIconSize = isFull ? 12 : 11;
 
   // Knob position: hugs the active side (right for Upcoming, left for
-  // All Market). When locked the knob sits in the centre so neither side is
-  // visually implied.
+  // All Market). When locked (Upcoming(m)), the knob still hugs the left
+  // edge to visually reinforce Upcoming(m) as the active label on the left.
   const knobLeftPosition = locked
-    ? (pillWidth - knobSize) / 2
+    ? knobLeftEdge
     : isAllMarketActive ? knobLeftEdge : knobRightEdge;
   const lockTitle
     = lockedReason
       ?? "Scope is locked because this request has matched agents.";
   const isSwitchDisabled = locked || isLoading;
 
-  // Both labels gray when locked, otherwise the active one is blue.
+  // Left label: "Upcoming(m)" when locked (rendered in the active blue
+  // color since the scope is still Upcoming), otherwise "All Market".
+  // Right label is always "Upcoming".
+  const leftLabelText = locked ? "Upcoming(m)" : "All Market";
   const leftLabelClass = locked
-    ? "text-gray-400"
+    ? "text-blue-600"
     : isAllMarketActive
       ? "text-blue-600"
       : "text-gray-500";
@@ -112,7 +115,9 @@ export function AdminScopeToggle({
       className={
         isFull
           ? "flex flex-col items-end gap-1.5"
-          : "flex flex-col items-center gap-1"
+          : locked
+            ? "flex flex-col items-start gap-1"
+            : "flex flex-col items-center gap-1"
       }
       data-testid={`admin-scope-toggle-${requestId}`}
     >
@@ -130,7 +135,7 @@ export function AdminScopeToggle({
         </span>
       ) : null}
 
-      <div className="flex items-center gap-2">
+      <div className={isFull || locked ? "flex items-center gap-2" : "flex items-center gap-2 justify-center"}>
         <span
           className={[
             "font-medium whitespace-nowrap",
@@ -138,7 +143,7 @@ export function AdminScopeToggle({
             leftLabelClass,
           ].join(" ")}
         >
-          All Market
+          {leftLabelText}
         </span>
 
         <button
