@@ -30,6 +30,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.pid
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -38,6 +39,22 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# local IDE/workspace state (do not commit executable editor tasks)
+.vscode/
+.idea/
+*.code-workspace
+
+# local package-manager and tool caches
+.pnpm-store/
+.cache/
+.turbo/
+
+# local credentials and certificates
+*.key
+*.p12
+*.pfx
+.envrc
 
 # typescript
 *.tsbuildinfo
