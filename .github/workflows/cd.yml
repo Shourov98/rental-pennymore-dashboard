@@ -1,9 +1,8 @@
 name: CD
 
 on:
-  push:
-    branches:
-      - main
+  # Deployments are intentionally manual while continuous delivery is paused.
+  # Run this workflow from GitHub Actions when an approved deployment is needed.
   workflow_dispatch:
 
 concurrency:
