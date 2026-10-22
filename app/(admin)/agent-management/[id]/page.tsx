@@ -112,22 +112,13 @@ export default function AgentDetailsPage() {
   const [registrationLink, setRegistrationLink] = useState(
     cachedAgent ? resolvePowerFormLink(cachedAgent as AgentDetail) : "",
   );
-  const [disclosureLink, setDisclosureLink] = useState("");
+  const [disclosureLink, setDisclosureLink] = useState(
+    cachedAgent
+      ? resolveDisclosurePowerFormLink(cachedAgent as AgentDetail)
+      : "",
+  );
   const [linkError, setLinkError] = useState<string | null>(null);
   const [copiedTarget, setCopiedTarget] = useState<PowerFormKey | null>(null);
-
-  useEffect(() => {
-    if (!cachedAgent) return;
-    setAgent((prev) => prev ?? (cachedAgent as AgentDetail));
-    setHasGrantAccess(cachedAgent.hasGrantAccess ?? false);
-    setRegistrationLink(
-      (prev) => prev || resolvePowerFormLink(cachedAgent as AgentDetail),
-    );
-    setDisclosureLink(
-      (prev) =>
-        prev || resolveDisclosurePowerFormLink(cachedAgent as AgentDetail),
-    );
-  }, [cachedAgent]);
 
   useEffect(() => {
     if (!agentId) return;

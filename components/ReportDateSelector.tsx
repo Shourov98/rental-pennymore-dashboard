@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 
 const months = [
   "January",
@@ -27,34 +26,21 @@ export default function ReportDateSelector({
   defaultYear?: string;
   onChange?: (month: string, year: string) => void;
 }) {
-  const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
-  const [selectedYear, setSelectedYear] = useState(defaultYear);
-
-  useEffect(() => {
-    setSelectedMonth(defaultMonth);
-  }, [defaultMonth]);
-
-  useEffect(() => {
-    setSelectedYear(defaultYear);
-  }, [defaultYear]);
-
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setSelectedMonth(value);
-    onChange?.(value, selectedYear);
+    onChange?.(value, defaultYear);
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setSelectedYear(value);
-    onChange?.(selectedMonth, value);
+    onChange?.(defaultMonth, value);
   };
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">
       {/* Month Dropdown */}
       <select
-        value={selectedMonth}
+        value={defaultMonth}
         onChange={handleMonthChange}
         className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 w-full sm:w-1/2"
       >
@@ -68,7 +54,7 @@ export default function ReportDateSelector({
 
       {/* Year Dropdown */}
       <select
-        value={selectedYear}
+        value={defaultYear}
         onChange={handleYearChange}
         className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 w-full sm:w-1/2"
       >
