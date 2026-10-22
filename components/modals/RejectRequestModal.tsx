@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 
@@ -22,6 +22,13 @@ export function RejectRequestModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleClose = useCallback(() => {
+    setNotes("Credentials don't meet requirements");
+    setError(null);
+    setSubmitting(false);
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -29,20 +36,12 @@ export function RejectRequestModal({
         !modalRef.current.contains(e.target as Node) &&
         isOpen
       ) {
-        onClose();
+        handleClose();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setNotes("Credentials don't meet requirements");
-      setError(null);
-      setSubmitting(false);
-    }
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
@@ -58,7 +57,7 @@ export function RejectRequestModal({
       );
 
       onSuccess?.();
-      onClose();
+      handleClose();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -77,7 +76,7 @@ export function RejectRequestModal({
         className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg relative"
       >
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute right-3 top-3 text-gray-500 hover:text-gray-800"
           disabled={submitting}
         >
@@ -110,7 +109,7 @@ export function RejectRequestModal({
 
         <div className="flex justify-end items-center gap-3">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-60"
             disabled={submitting}
           >

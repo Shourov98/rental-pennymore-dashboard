@@ -132,12 +132,6 @@ export default function RenterConnectionPage() {
     }
   };
 
-  useEffect(() => {
-    if (pagination?.totalPages && currentPage > pagination.totalPages) {
-      setCurrentPage(pagination.totalPages);
-    }
-  }, [currentPage, pagination?.totalPages]);
-
   const closeDeleteModal = useCallback(() => {
     if (isDeleting) return;
     setDeleteTarget(null);

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, Eye, DollarSign, Check, X } from "lucide-react";
 import { TakeActionModal } from "@/components/modals/TakeActionModal";
-import { PaymentCheckModal } from "@/components/modals/PaymentCheckModal";
 import { RejectRequestModal } from "@/components/modals/RejectRequestModal";
 import { useParams, useRouter } from "next/navigation";
 import RenterContactCard from "@/components/RenterContactCard";
@@ -49,7 +48,6 @@ type RequestDetailResponse = {
 export default function RenterConnectionDetailsPage() {
   const [selectedAgents] = useState<string[]>([]);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [activeAgentRequestId, setActiveAgentRequestId] = useState<
     string | null
@@ -494,23 +492,6 @@ export default function RenterConnectionDetailsPage() {
           setIsActionModalOpen(false);
           setIsRejectModalOpen(true);
         }}
-        onCharge={() => {
-          const selectedRequestId = getSelectedAgentRequestId();
-          if (!selectedRequestId) return;
-          setActiveAgentRequestId(selectedRequestId);
-          setIsActionModalOpen(false);
-          setIsPaymentModalOpen(true);
-        }}
-      />
-
-      <PaymentCheckModal
-        isOpen={isPaymentModalOpen && Boolean(activeAgentRequestId)}
-        onClose={() => {
-          setIsPaymentModalOpen(false);
-          setActiveAgentRequestId(null);
-        }}
-        requestId={activeAgentRequestId ?? ""}
-        onSuccess={() => loadRequest()}
       />
 
       <RejectRequestModal
