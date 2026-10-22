@@ -6,14 +6,12 @@ import { X } from "lucide-react";
 interface TakeActionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCharge: () => void;
   onRemove: () => void;
 }
 
 export function TakeActionModal({
   isOpen,
   onClose,
-  onCharge,
   onRemove,
 }: TakeActionModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -61,12 +59,6 @@ export function TakeActionModal({
             className="w-32 py-2 rounded-md bg-red-50 text-red-600 font-medium hover:bg-red-100 transition"
           >
             Remove
-          </button>
-          <button
-            onClick={onCharge}
-            className="w-32 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
-          >
-            Charge
           </button>
         </div>
       </div>

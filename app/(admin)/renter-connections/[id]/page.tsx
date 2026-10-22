@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, Eye, DollarSign, Check, X } from "lucide-react";
+import { ChevronLeft, Eye, Check, X } from "lucide-react";
 import { TakeActionModal } from "@/components/modals/TakeActionModal";
-import { PaymentCheckModal } from "@/components/modals/PaymentCheckModal";
 import { RejectRequestModal } from "@/components/modals/RejectRequestModal";
 import { useParams, useRouter } from "next/navigation";
 import RenterContactCard from "@/components/RenterContactCard";
@@ -49,7 +48,6 @@ type RequestDetailResponse = {
 export default function RenterConnectionDetailsPage() {
   const [selectedAgents] = useState<string[]>([]);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [activeAgentRequestId, setActiveAgentRequestId] = useState<
     string | null
@@ -385,21 +383,7 @@ export default function RenterConnectionDetailsPage() {
                                 <Eye size={16} className="text-gray-800" />
                               </button>
 
-                              {isPending ? (
-                                <button
-                                  onClick={() => {
-                                    if (!agentRequest._id) return;
-                                    setActiveAgentRequestId(agentRequest._id);
-                                    setIsPaymentModalOpen(true);
-                                  }}
-                                  className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
-                                >
-                                  <DollarSign
-                                    size={16}
-                                    className="text-blue-600"
-                                  />
-                                </button>
-                              ) : (
+                              {!isPending && (
                                 <button
                                   className={`rounded-full p-2 transition ${
                                     isRejected
@@ -494,23 +478,6 @@ export default function RenterConnectionDetailsPage() {
           setIsActionModalOpen(false);
           setIsRejectModalOpen(true);
         }}
-        onCharge={() => {
-          const selectedRequestId = getSelectedAgentRequestId();
-          if (!selectedRequestId) return;
-          setActiveAgentRequestId(selectedRequestId);
-          setIsActionModalOpen(false);
-          setIsPaymentModalOpen(true);
-        }}
-      />
-
-      <PaymentCheckModal
-        isOpen={isPaymentModalOpen && Boolean(activeAgentRequestId)}
-        onClose={() => {
-          setIsPaymentModalOpen(false);
-          setActiveAgentRequestId(null);
-        }}
-        requestId={activeAgentRequestId ?? ""}
-        onSuccess={() => loadRequest()}
       />
 
       <RejectRequestModal

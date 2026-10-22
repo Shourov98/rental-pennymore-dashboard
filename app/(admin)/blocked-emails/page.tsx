@@ -93,7 +93,7 @@ export default function BlockedEmailsPage() {
   };
 
   useEffect(() => {
-    void loadBlockedEmails();
+    void Promise.resolve().then(loadBlockedEmails);
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

@@ -1,5 +1,15 @@
 # Penny More Dashboard
 
+## Deployment
+
+The dashboard is deployed by `.github/workflows/cd.yml`: a push to `main`
+first runs the locked install, lint, and build checks, then connects to the
+configured server with the repository SSH secrets and runs Docker Compose in
+`/home/apps/app/dashboard`. The workflow now uses a fast-forward-only update,
+so it stops rather than merging unexpected server-side commits. GitHub Actions
+secrets and a successful workflow run are still required; this repository does
+not prove that a server deployment has completed.
+
 A modern, responsive dashboard application built with Next.js, React, and Tailwind CSS. This dashboard provides administrative interfaces for managing renters and property-related operations.
 
 ## 🚀 Features

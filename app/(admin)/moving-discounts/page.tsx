@@ -170,14 +170,11 @@ export default function MovingDiscountsPage() {
   }, []);
 
   useEffect(() => {
-    void fetchCategories();
+    void Promise.resolve().then(fetchCategories);
   }, [fetchCategories]);
 
   useEffect(() => {
-    if (!selectedCategoryId) {
-      setItems([]);
-      return;
-    }
+    if (!selectedCategoryId) return;
     let cancelled = false;
     void (async () => {
       try {

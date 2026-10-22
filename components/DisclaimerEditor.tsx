@@ -77,7 +77,6 @@ const sanitizeHtml = (raw: string): string => {
 };
 
 export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
-  const [loaded, setLoaded] = useState(false);
   const [value, setValue] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,14 +104,12 @@ export default function DisclaimerEditor({ onSaved }: DisclaimerEditorProps) {
           const text = response.data?.data?.disclaimer ?? "";
           setValue(text);
           initialValueRef.current = text;
-          setLoaded(true);
         }
       } catch (err) {
         if (controller.cancelled) return;
         const message =
           err instanceof Error ? err.message : "Failed to load disclaimer.";
         setError(message);
-        setLoaded(true);
       } finally {
         if (!controller.cancelled) setIsLoading(false);
       }
