@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, Eye, DollarSign, Check, X } from "lucide-react";
+import { ChevronLeft, Eye, Check, X } from "lucide-react";
 import { TakeActionModal } from "@/components/modals/TakeActionModal";
 import { RejectRequestModal } from "@/components/modals/RejectRequestModal";
 import { useParams, useRouter } from "next/navigation";
@@ -383,21 +383,7 @@ export default function RenterConnectionDetailsPage() {
                                 <Eye size={16} className="text-gray-800" />
                               </button>
 
-                              {isPending ? (
-                                <button
-                                  onClick={() => {
-                                    if (!agentRequest._id) return;
-                                    setActiveAgentRequestId(agentRequest._id);
-                                    setIsPaymentModalOpen(true);
-                                  }}
-                                  className="bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition"
-                                >
-                                  <DollarSign
-                                    size={16}
-                                    className="text-blue-600"
-                                  />
-                                </button>
-                              ) : (
+                              {!isPending && (
                                 <button
                                   className={`rounded-full p-2 transition ${
                                     isRejected
